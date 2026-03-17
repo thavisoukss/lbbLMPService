@@ -1,0 +1,12 @@
+spring:
+  profiles:
+    active: uat # ປ່ຽນເປັນ prod ເມື່ອຈະຂຶ້ນລະບົບຈິງ
+
+# ການຕັ້ງຄ່າລວມທີ່ໃຊ້ຄືກັນທັງໝົດ
+logging:
+  config: classpath:log4j2.xml
+
+management:
+  tracing:
+    sampling:
+      probability: 1.0  # ເກັບ Trace ທຸກ Request (ຖ້າໃຊ້ໃນ Production ຕົວຈິງອາດຈະປັບເປັນ 0.1)

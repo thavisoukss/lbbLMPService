@@ -1,0 +1,2 @@
+2026-03-15 10:47:01 [SpringApplicationShutdownHook] INFO  org.springframework.boot.web.embedded.tomcat.GracefulShutdown [traceId=, spanId=] - Commencing graceful shutdown. Waiting for active requests to complete
+2026-03-15 10:47:01 [tomcat-shutdown] INFO  org.springframework.boot.web.embedded.tomcat.GracefulShutdown [traceId=, spanId=] - Graceful shutdown complete
