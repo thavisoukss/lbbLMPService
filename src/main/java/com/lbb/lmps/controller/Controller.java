@@ -7,7 +7,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("${baseurl}")
+@RequestMapping("${LMPS_BASE_URL:/api/lmps}")
 public class Controller {
 
     private static final Logger logger = LogManager.getLogger(Controller.class);
