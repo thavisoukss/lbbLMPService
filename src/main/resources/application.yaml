@@ -1,8 +1,6 @@
 spring:
   profiles:
-    active: uat # ປ່ຽນເປັນ prod ເມື່ອຈະຂຶ້ນລະບົບຈິງ
-
-# ການຕັ້ງຄ່າລວມທີ່ໃຊ້ຄືກັນທັງໝົດ
+    active: dev
 logging:
   config: classpath:log4j2.xml
 

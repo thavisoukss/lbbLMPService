@@ -1,2 +1,113 @@
-2026-03-15 10:47:01 [SpringApplicationShutdownHook] INFO  org.springframework.boot.web.embedded.tomcat.GracefulShutdown [traceId=, spanId=] - Commencing graceful shutdown. Waiting for active requests to complete
-2026-03-15 10:47:01 [tomcat-shutdown] INFO  org.springframework.boot.web.embedded.tomcat.GracefulShutdown [traceId=, spanId=] - Graceful shutdown complete
+2026-03-30 19:30:48 [main] INFO  com.lbb.lmps.LmpsApplication [traceId=, spanId=] - Starting LmpsApplication using Java 17.0.6 with PID 72033 (/Users/thavisoukkhounlasapiphak/Desktop/EXTERNAL_PROJECT/API_GATEWAY_LBB/source_code/backend/lmpsService/target/classes started by thavisoukkhounlasapiphak in /Users/thavisoukkhounlasapiphak/Desktop/EXTERNAL_PROJECT/API_GATEWAY_LBB/source_code/backend/lmpsService)
+2026-03-30 19:30:48 [main] INFO  com.lbb.lmps.LmpsApplication [traceId=, spanId=] - The following 1 profile is active: "dev"
+2026-03-30 19:30:49 [main] INFO  org.springframework.boot.web.embedded.tomcat.TomcatWebServer [traceId=, spanId=] - Tomcat initialized with port 8084 (http)
+2026-03-30 19:30:49 [main] INFO  org.apache.coyote.http11.Http11NioProtocol [traceId=, spanId=] - Initializing ProtocolHandler ["http-nio-8084"]
+2026-03-30 19:30:49 [main] INFO  org.apache.catalina.core.StandardService [traceId=, spanId=] - Starting service [Tomcat]
+2026-03-30 19:30:49 [main] INFO  org.apache.catalina.core.StandardEngine [traceId=, spanId=] - Starting Servlet engine: [Apache Tomcat/10.1.34]
+2026-03-30 19:30:49 [main] INFO  org.apache.catalina.core.ContainerBase.[Tomcat].[localhost].[/] [traceId=, spanId=] - Initializing Spring embedded WebApplicationContext
+2026-03-30 19:30:49 [main] INFO  org.springframework.boot.web.servlet.context.ServletWebServerApplicationContext [traceId=, spanId=] - Root WebApplicationContext: initialization completed in 488 ms
+2026-03-30 19:30:49 [main] WARN  org.springframework.boot.autoconfigure.security.servlet.UserDetailsServiceAutoConfiguration [traceId=, spanId=] - 
+
+Using generated security password: 4f418875-28bd-4660-994c-82d973ce1e83
+
+This generated password is for development use only. Your security configuration must be updated before running your application in production.
+
+2026-03-30 19:30:49 [main] INFO  org.springframework.security.config.annotation.authentication.configuration.InitializeUserDetailsBeanManagerConfigurer$InitializeUserDetailsManagerConfigurer [traceId=, spanId=] - Global AuthenticationManager configured with UserDetailsService bean with name inMemoryUserDetailsManager
+2026-03-30 19:30:49 [main] INFO  org.apache.coyote.http11.Http11NioProtocol [traceId=, spanId=] - Starting ProtocolHandler ["http-nio-8084"]
+2026-03-30 19:30:49 [main] INFO  org.springframework.boot.web.embedded.tomcat.TomcatWebServer [traceId=, spanId=] - Tomcat started on port 8084 (http) with context path '/'
+2026-03-30 19:30:49 [main] INFO  com.lbb.lmps.LmpsApplication [traceId=, spanId=] - Started LmpsApplication in 0.966 seconds (process running for 1.294)
+2026-03-30 19:31:45 [SpringApplicationShutdownHook] INFO  org.springframework.boot.web.embedded.tomcat.GracefulShutdown [traceId=, spanId=] - Commencing graceful shutdown. Waiting for active requests to complete
+2026-03-30 19:31:45 [tomcat-shutdown] INFO  org.springframework.boot.web.embedded.tomcat.GracefulShutdown [traceId=, spanId=] - Graceful shutdown complete
+2026-03-30 19:31:46 [main] INFO  com.lbb.lmps.LmpsApplication [traceId=, spanId=] - Starting LmpsApplication using Java 17.0.6 with PID 72227 (/Users/thavisoukkhounlasapiphak/Desktop/EXTERNAL_PROJECT/API_GATEWAY_LBB/source_code/backend/lmpsService/target/classes started by thavisoukkhounlasapiphak in /Users/thavisoukkhounlasapiphak/Desktop/EXTERNAL_PROJECT/API_GATEWAY_LBB/source_code/backend/lmpsService)
+2026-03-30 19:31:46 [main] INFO  com.lbb.lmps.LmpsApplication [traceId=, spanId=] - The following 1 profile is active: "dev"
+2026-03-30 19:31:47 [main] INFO  org.springframework.boot.web.embedded.tomcat.TomcatWebServer [traceId=, spanId=] - Tomcat initialized with port 8084 (http)
+2026-03-30 19:31:47 [main] INFO  org.apache.coyote.http11.Http11NioProtocol [traceId=, spanId=] - Initializing ProtocolHandler ["http-nio-8084"]
+2026-03-30 19:31:47 [main] INFO  org.apache.catalina.core.StandardService [traceId=, spanId=] - Starting service [Tomcat]
+2026-03-30 19:31:47 [main] INFO  org.apache.catalina.core.StandardEngine [traceId=, spanId=] - Starting Servlet engine: [Apache Tomcat/10.1.34]
+2026-03-30 19:31:47 [main] INFO  org.apache.catalina.core.ContainerBase.[Tomcat].[localhost].[/] [traceId=, spanId=] - Initializing Spring embedded WebApplicationContext
+2026-03-30 19:31:47 [main] INFO  org.springframework.boot.web.servlet.context.ServletWebServerApplicationContext [traceId=, spanId=] - Root WebApplicationContext: initialization completed in 511 ms
+2026-03-30 19:31:47 [main] WARN  org.springframework.boot.autoconfigure.security.servlet.UserDetailsServiceAutoConfiguration [traceId=, spanId=] - 
+
+Using generated security password: eb462404-03a4-4c79-91c2-cc8c4bd34087
+
+This generated password is for development use only. Your security configuration must be updated before running your application in production.
+
+2026-03-30 19:31:47 [main] INFO  org.springframework.security.config.annotation.authentication.configuration.InitializeUserDetailsBeanManagerConfigurer$InitializeUserDetailsManagerConfigurer [traceId=, spanId=] - Global AuthenticationManager configured with UserDetailsService bean with name inMemoryUserDetailsManager
+2026-03-30 19:31:47 [main] INFO  org.apache.coyote.http11.Http11NioProtocol [traceId=, spanId=] - Starting ProtocolHandler ["http-nio-8084"]
+2026-03-30 19:31:47 [main] INFO  org.springframework.boot.web.embedded.tomcat.TomcatWebServer [traceId=, spanId=] - Tomcat started on port 8084 (http) with context path '/'
+2026-03-30 19:31:47 [main] INFO  com.lbb.lmps.LmpsApplication [traceId=, spanId=] - Started LmpsApplication in 0.99 seconds (process running for 1.344)
+2026-03-30 19:32:01 [SpringApplicationShutdownHook] INFO  org.springframework.boot.web.embedded.tomcat.GracefulShutdown [traceId=, spanId=] - Commencing graceful shutdown. Waiting for active requests to complete
+2026-03-30 19:32:01 [tomcat-shutdown] INFO  org.springframework.boot.web.embedded.tomcat.GracefulShutdown [traceId=, spanId=] - Graceful shutdown complete
+2026-03-30 19:32:02 [main] INFO  com.lbb.lmps.LmpsApplication [traceId=, spanId=] - Starting LmpsApplication using Java 17.0.6 with PID 72295 (/Users/thavisoukkhounlasapiphak/Desktop/EXTERNAL_PROJECT/API_GATEWAY_LBB/source_code/backend/lmpsService/target/classes started by thavisoukkhounlasapiphak in /Users/thavisoukkhounlasapiphak/Desktop/EXTERNAL_PROJECT/API_GATEWAY_LBB/source_code/backend/lmpsService)
+2026-03-30 19:32:02 [main] INFO  com.lbb.lmps.LmpsApplication [traceId=, spanId=] - The following 1 profile is active: "dev"
+2026-03-30 19:32:03 [main] INFO  org.springframework.boot.web.embedded.tomcat.TomcatWebServer [traceId=, spanId=] - Tomcat initialized with port 8084 (http)
+2026-03-30 19:32:03 [main] INFO  org.apache.coyote.http11.Http11NioProtocol [traceId=, spanId=] - Initializing ProtocolHandler ["http-nio-8084"]
+2026-03-30 19:32:03 [main] INFO  org.apache.catalina.core.StandardService [traceId=, spanId=] - Starting service [Tomcat]
+2026-03-30 19:32:03 [main] INFO  org.apache.catalina.core.StandardEngine [traceId=, spanId=] - Starting Servlet engine: [Apache Tomcat/10.1.34]
+2026-03-30 19:32:03 [main] INFO  org.apache.catalina.core.ContainerBase.[Tomcat].[localhost].[/] [traceId=, spanId=] - Initializing Spring embedded WebApplicationContext
+2026-03-30 19:32:03 [main] INFO  org.springframework.boot.web.servlet.context.ServletWebServerApplicationContext [traceId=, spanId=] - Root WebApplicationContext: initialization completed in 478 ms
+2026-03-30 19:32:03 [main] WARN  org.springframework.boot.autoconfigure.security.servlet.UserDetailsServiceAutoConfiguration [traceId=, spanId=] - 
+
+Using generated security password: aa94f65a-8a70-4fe5-9ae4-842460e55723
+
+This generated password is for development use only. Your security configuration must be updated before running your application in production.
+
+2026-03-30 19:32:03 [main] INFO  org.springframework.security.config.annotation.authentication.configuration.InitializeUserDetailsBeanManagerConfigurer$InitializeUserDetailsManagerConfigurer [traceId=, spanId=] - Global AuthenticationManager configured with UserDetailsService bean with name inMemoryUserDetailsManager
+2026-03-30 19:32:03 [main] INFO  org.apache.coyote.http11.Http11NioProtocol [traceId=, spanId=] - Starting ProtocolHandler ["http-nio-8084"]
+2026-03-30 19:32:03 [main] INFO  org.springframework.boot.web.embedded.tomcat.TomcatWebServer [traceId=, spanId=] - Tomcat started on port 8084 (http) with context path '/'
+2026-03-30 19:32:03 [main] INFO  com.lbb.lmps.LmpsApplication [traceId=, spanId=] - Started LmpsApplication in 0.939 seconds (process running for 1.283)
+2026-03-30 19:32:47 [http-nio-8084-exec-1] INFO  org.apache.catalina.core.ContainerBase.[Tomcat].[localhost].[/] [traceId=, spanId=] - Initializing Spring DispatcherServlet 'dispatcherServlet'
+2026-03-30 19:32:47 [http-nio-8084-exec-1] INFO  org.springframework.web.servlet.DispatcherServlet [traceId=, spanId=] - Initializing Servlet 'dispatcherServlet'
+2026-03-30 19:32:47 [http-nio-8084-exec-1] INFO  org.springframework.web.servlet.DispatcherServlet [traceId=, spanId=] - Completed initialization in 1 ms
+2026-03-30 19:34:03 [SpringApplicationShutdownHook] INFO  org.springframework.boot.web.embedded.tomcat.GracefulShutdown [traceId=, spanId=] - Commencing graceful shutdown. Waiting for active requests to complete
+2026-03-30 19:34:03 [tomcat-shutdown] INFO  org.springframework.boot.web.embedded.tomcat.GracefulShutdown [traceId=, spanId=] - Graceful shutdown complete
+2026-03-30 19:34:05 [main] INFO  com.lbb.lmps.LmpsApplication [traceId=, spanId=] - Starting LmpsApplication using Java 17.0.6 with PID 72729 (/Users/thavisoukkhounlasapiphak/Desktop/EXTERNAL_PROJECT/API_GATEWAY_LBB/source_code/backend/lmpsService/target/classes started by thavisoukkhounlasapiphak in /Users/thavisoukkhounlasapiphak/Desktop/EXTERNAL_PROJECT/API_GATEWAY_LBB/source_code/backend/lmpsService)
+2026-03-30 19:34:05 [main] INFO  com.lbb.lmps.LmpsApplication [traceId=, spanId=] - The following 1 profile is active: "dev"
+2026-03-30 19:34:06 [main] INFO  org.springframework.boot.web.embedded.tomcat.TomcatWebServer [traceId=, spanId=] - Tomcat initialized with port 8084 (http)
+2026-03-30 19:34:06 [main] INFO  org.apache.coyote.http11.Http11NioProtocol [traceId=, spanId=] - Initializing ProtocolHandler ["http-nio-8084"]
+2026-03-30 19:34:06 [main] INFO  org.apache.catalina.core.StandardService [traceId=, spanId=] - Starting service [Tomcat]
+2026-03-30 19:34:06 [main] INFO  org.apache.catalina.core.StandardEngine [traceId=, spanId=] - Starting Servlet engine: [Apache Tomcat/10.1.34]
+2026-03-30 19:34:06 [main] INFO  org.apache.catalina.core.ContainerBase.[Tomcat].[localhost].[/] [traceId=, spanId=] - Initializing Spring embedded WebApplicationContext
+2026-03-30 19:34:06 [main] INFO  org.springframework.boot.web.servlet.context.ServletWebServerApplicationContext [traceId=, spanId=] - Root WebApplicationContext: initialization completed in 491 ms
+2026-03-30 19:34:06 [main] WARN  org.springframework.boot.autoconfigure.security.servlet.UserDetailsServiceAutoConfiguration [traceId=, spanId=] - 
+
+Using generated security password: b152f97f-2c20-4c87-b98b-c61bf5f65f67
+
+This generated password is for development use only. Your security configuration must be updated before running your application in production.
+
+2026-03-30 19:34:06 [main] INFO  org.springframework.security.config.annotation.authentication.configuration.InitializeUserDetailsBeanManagerConfigurer$InitializeUserDetailsManagerConfigurer [traceId=, spanId=] - Global AuthenticationManager configured with UserDetailsService bean with name inMemoryUserDetailsManager
+2026-03-30 19:34:06 [main] INFO  org.apache.coyote.http11.Http11NioProtocol [traceId=, spanId=] - Starting ProtocolHandler ["http-nio-8084"]
+2026-03-30 19:34:06 [main] INFO  org.springframework.boot.web.embedded.tomcat.TomcatWebServer [traceId=, spanId=] - Tomcat started on port 8084 (http) with context path '/'
+2026-03-30 19:34:06 [main] INFO  com.lbb.lmps.LmpsApplication [traceId=, spanId=] - Started LmpsApplication in 0.949 seconds (process running for 1.301)
+2026-03-30 19:34:10 [http-nio-8084-exec-2] INFO  org.apache.catalina.core.ContainerBase.[Tomcat].[localhost].[/] [traceId=, spanId=] - Initializing Spring DispatcherServlet 'dispatcherServlet'
+2026-03-30 19:34:10 [http-nio-8084-exec-2] INFO  org.springframework.web.servlet.DispatcherServlet [traceId=, spanId=] - Initializing Servlet 'dispatcherServlet'
+2026-03-30 19:34:10 [http-nio-8084-exec-2] INFO  org.springframework.web.servlet.DispatcherServlet [traceId=, spanId=] - Completed initialization in 1 ms
+2026-03-30 19:34:11 [http-nio-8084-exec-2] INFO  com.lbb.lmps.controller.Controller [traceId=, spanId=] - test
+2026-03-30 19:34:11 [http-nio-8084-exec-3] INFO  com.lbb.lmps.controller.Controller [traceId=, spanId=] - test
+2026-03-30 19:34:40 [SpringApplicationShutdownHook] INFO  org.springframework.boot.web.embedded.tomcat.GracefulShutdown [traceId=, spanId=] - Commencing graceful shutdown. Waiting for active requests to complete
+2026-03-30 19:34:40 [tomcat-shutdown] INFO  org.springframework.boot.web.embedded.tomcat.GracefulShutdown [traceId=, spanId=] - Graceful shutdown complete
+2026-03-30 19:34:42 [main] INFO  com.lbb.lmps.LmpsApplication [traceId=, spanId=] - Starting LmpsApplication using Java 17.0.6 with PID 72856 (/Users/thavisoukkhounlasapiphak/Desktop/EXTERNAL_PROJECT/API_GATEWAY_LBB/source_code/backend/lmpsService/target/classes started by thavisoukkhounlasapiphak in /Users/thavisoukkhounlasapiphak/Desktop/EXTERNAL_PROJECT/API_GATEWAY_LBB/source_code/backend/lmpsService)
+2026-03-30 19:34:42 [main] INFO  com.lbb.lmps.LmpsApplication [traceId=, spanId=] - The following 1 profile is active: "dev"
+2026-03-30 19:34:42 [main] INFO  org.springframework.boot.web.embedded.tomcat.TomcatWebServer [traceId=, spanId=] - Tomcat initialized with port 8084 (http)
+2026-03-30 19:34:42 [main] INFO  org.apache.coyote.http11.Http11NioProtocol [traceId=, spanId=] - Initializing ProtocolHandler ["http-nio-8084"]
+2026-03-30 19:34:42 [main] INFO  org.apache.catalina.core.StandardService [traceId=, spanId=] - Starting service [Tomcat]
+2026-03-30 19:34:42 [main] INFO  org.apache.catalina.core.StandardEngine [traceId=, spanId=] - Starting Servlet engine: [Apache Tomcat/10.1.34]
+2026-03-30 19:34:42 [main] INFO  org.apache.catalina.core.ContainerBase.[Tomcat].[localhost].[/] [traceId=, spanId=] - Initializing Spring embedded WebApplicationContext
+2026-03-30 19:34:42 [main] INFO  org.springframework.boot.web.servlet.context.ServletWebServerApplicationContext [traceId=, spanId=] - Root WebApplicationContext: initialization completed in 484 ms
+2026-03-30 19:34:42 [main] WARN  org.springframework.boot.autoconfigure.security.servlet.UserDetailsServiceAutoConfiguration [traceId=, spanId=] - 
+
+Using generated security password: addaf8ab-4446-4176-9200-d5d788abdb96
+
+This generated password is for development use only. Your security configuration must be updated before running your application in production.
+
+2026-03-30 19:34:42 [main] INFO  org.springframework.security.config.annotation.authentication.configuration.InitializeUserDetailsBeanManagerConfigurer$InitializeUserDetailsManagerConfigurer [traceId=, spanId=] - Global AuthenticationManager configured with UserDetailsService bean with name inMemoryUserDetailsManager
+2026-03-30 19:34:42 [main] INFO  org.apache.coyote.http11.Http11NioProtocol [traceId=, spanId=] - Starting ProtocolHandler ["http-nio-8084"]
+2026-03-30 19:34:42 [main] INFO  org.springframework.boot.web.embedded.tomcat.TomcatWebServer [traceId=, spanId=] - Tomcat started on port 8084 (http) with context path '/'
+2026-03-30 19:34:42 [main] INFO  com.lbb.lmps.LmpsApplication [traceId=, spanId=] - Started LmpsApplication in 0.949 seconds (process running for 1.299)
+2026-03-30 19:34:56 [http-nio-8084-exec-1] INFO  org.apache.catalina.core.ContainerBase.[Tomcat].[localhost].[/] [traceId=, spanId=] - Initializing Spring DispatcherServlet 'dispatcherServlet'
+2026-03-30 19:34:56 [http-nio-8084-exec-1] INFO  org.springframework.web.servlet.DispatcherServlet [traceId=, spanId=] - Initializing Servlet 'dispatcherServlet'
+2026-03-30 19:34:56 [http-nio-8084-exec-1] INFO  org.springframework.web.servlet.DispatcherServlet [traceId=, spanId=] - Completed initialization in 0 ms
+2026-03-30 19:34:56 [http-nio-8084-exec-1] INFO  com.lbb.lmps.controller.Controller [traceId=, spanId=] - test
+2026-03-30 19:34:56 [http-nio-8084-exec-3] INFO  com.lbb.lmps.controller.Controller [traceId=, spanId=] - test
+2026-03-30 19:37:59 [SpringApplicationShutdownHook] INFO  org.springframework.boot.web.embedded.tomcat.GracefulShutdown [traceId=, spanId=] - Commencing graceful shutdown. Waiting for active requests to complete
+2026-03-30 19:37:59 [tomcat-shutdown] INFO  org.springframework.boot.web.embedded.tomcat.GracefulShutdown [traceId=, spanId=] - Graceful shutdown complete

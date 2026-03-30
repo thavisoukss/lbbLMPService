@@ -12,8 +12,10 @@ public class Controller {
 
     private static final Logger logger = LogManager.getLogger(Controller.class);
 
-    @GetMapping("/test")
+    @GetMapping("/help-check")
     public String TestService(){
+        System.out.println("******* deeplink Service working *******");
+        logger.info("test");
         return  "******* deeplink Service working *******";
     }
 }

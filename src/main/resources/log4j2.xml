@@ -1,4 +1,6 @@
-<Configuration>
+<configuration>
+    <include resource="org/springframework/boot/logging/logback/base.xml"/>
+
     <Appenders>
         <RollingFile name="LogToFile" fileName="logs/app-service.log"
                      filePattern="logs/app-%d{yyyy-MM-dd}.log">
@@ -11,6 +13,7 @@
     <Loggers>
         <Root level="info">
             <AppenderRef ref="LogToFile"/>
+            <appender-ref ref="CONSOLE"/>
         </Root>
     </Loggers>
-</Configuration>
+</configuration>
