@@ -8,3 +8,13 @@ management:
   tracing:
     sampling:
       probability: 1.0  # ເກັບ Trace ທຸກ Request (ຖ້າໃຊ້ໃນ Production ຕົວຈິງອາດຈະປັບເປັນ 0.1)
+
+external:
+  api:
+    m-smart:
+      path-root: /m-smart/lmps
+      path-member-list: /member-list
+      path-inq-out: /out/inquiry/register
+      path-trf-out: /out/transfer
+      path-build-qr: /qr/generate
+      path-qr-info: /qr/info
