@@ -1,7 +1,7 @@
 
 server:
   port: 8084
-baseurl: /api/lmps
+baseurl: /lmps/api
 #spring:
 #  datasource:
 #    continue-on-error: true # ໃຫ້ເຮັດວຽກຕໍ່ເຖິງຈະມີ Error ຕອນ Init DB

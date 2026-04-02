@@ -10,13 +10,10 @@ import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
-import org.springframework.web.util.UriComponentsBuilder;
 
 import java.nio.charset.StandardCharsets;
-import java.util.Objects;
 import java.util.Optional;
 
 @Service
@@ -53,16 +50,14 @@ public class ApiMSmart {
     }
 
     public String callMemberList(MemberListRequest request) throws Exception {
-        String uriPath = UriComponentsBuilder.fromPath(pathRoot)
-                .path(pathMemberList)
-                .toUriString();
+        String uriPath = pathRoot + pathMemberList;
         log.info(":: Calling m-smart member-list at URI: {}", uriPath);
         return post(uriPath, MAPPER.writeValueAsString(request));
     }
 
-    private String post(String uriPath, String body) {
+    private String post(String uriPath, String body) throws Exception {
         log.info(":: http request body: {}", body);
-        ResponseEntity<?> resEnt = restClient
+        return restClient
                 .post()
                 .uri(uriPath)
                 .headers(headers -> {
@@ -71,17 +66,15 @@ public class ApiMSmart {
                             .ifPresent(span -> propagator.inject(span.context(), headers, HttpHeaders::add));
                 })
                 .body(body)
-                .exchange((request, response) -> {
+                .exchange((req, response) -> {
                     String responseBody = new String(response.getBody().readAllBytes(), StandardCharsets.UTF_8);
                     if (response.getStatusCode().isError()) {
                         log.error(":: !! m-smart API Error - Status: {}, Body: {}", response.getStatusCode(), responseBody);
-                    } else {
-                        log.info(":: m-smart API Success - Status: {}", response.getStatusCode());
+                        throw new RuntimeException("m-smart error: " + response.getStatusCode() + " | " + responseBody);
                     }
-                    return ResponseEntity.status(response.getStatusCode()).headers(response.getHeaders()).body(responseBody);
+                    log.info(":: m-smart API Success - Status: {}", response.getStatusCode());
+                    log.info(":: http response body: {}", responseBody);
+                    return responseBody;
                 });
-        log.info(":: http response status: {}", resEnt.getStatusCode());
-        log.info(":: http response body: {}", resEnt.getBody());
-        return Objects.requireNonNull(resEnt.getBody()).toString();
     }
 }

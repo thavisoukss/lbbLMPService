@@ -4,6 +4,9 @@ spring:
 logging:
   config: classpath:log4j2.xml
 
+server:
+  servlet:
+    context-path: /lmps/api
 management:
   tracing:
     sampling:
@@ -13,7 +16,7 @@ external:
   api:
     m-smart:
       path-root: /m-smart/lmps
-      path-member-list: /member-list
+      path-member-list: /member/list
       path-inq-out: /out/inquiry/register
       path-trf-out: /out/transfer
       path-build-qr: /qr/generate

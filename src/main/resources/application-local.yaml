@@ -20,7 +20,7 @@ external:
     core-banking:
       url: http://localhost:8082/api/corebanking
     m-smart:
-      url: http://172.16.4.18:7001
+      url: http://localhost:7001
 
 # ການຕັ້ງຄ່າ Log4j2
 logging:
