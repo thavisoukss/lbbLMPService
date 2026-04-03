@@ -3,6 +3,7 @@ package com.lbb.lmps.remote;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.lbb.lmps.dto.MemberListRequest;
+import com.lbb.lmps.dto.SmartInquiryOutRequest;
 import io.micrometer.tracing.Tracer;
 import io.micrometer.tracing.propagation.Propagator;
 import org.apache.logging.log4j.LogManager;
@@ -31,6 +32,9 @@ public class ApiMSmart {
     @Value("${external.api.m-smart.path-member-list}")
     private String pathMemberList;
 
+    @Value("${external.api.m-smart.path-inq-out}")
+    private String pathInqOut;
+
     private final RestClient restClient;
     private final Tracer tracer;
     private final Propagator propagator;
@@ -52,6 +56,12 @@ public class ApiMSmart {
     public String callMemberList(MemberListRequest request) throws Exception {
         String uriPath = pathRoot + pathMemberList;
         log.info(":: Calling m-smart member-list at URI: {}", uriPath);
+        return post(uriPath, MAPPER.writeValueAsString(request));
+    }
+
+    public String callInquiryOut(SmartInquiryOutRequest request) throws Exception {
+        String uriPath = pathRoot + pathInqOut;
+        log.info(":: Calling m-smart inquiry-out at URI: {}", uriPath);
         return post(uriPath, MAPPER.writeValueAsString(request));
     }
 

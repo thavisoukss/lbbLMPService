@@ -1,17 +1,12 @@
 package com.lbb.lmps.controller;
 
-import com.lbb.lmps.dto.ClientInfo;
-import com.lbb.lmps.dto.MemberListRequest;
-import com.lbb.lmps.dto.MemberListResponse;
-import com.lbb.lmps.dto.SecurityContext;
+import com.lbb.lmps.dto.*;
+import com.lbb.lmps.service.InquiryOutService;
 import com.lbb.lmps.service.MemberListService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestHeader;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @Slf4j
 @RestController
@@ -20,6 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class Controller {
 
     private final MemberListService memberListService;
+    private final InquiryOutService inquiryOutService;
 
     @GetMapping("/help-check")
     public String testService() {
@@ -49,6 +45,21 @@ public class Controller {
 
         log.info("< Final response: {} | duration_ms={}", finalResponse, System.currentTimeMillis() - start);
         log.info("<<< END getMemberList request <<<");
+        return ResponseEntity.ok(finalResponse);
+    }
+
+    @PostMapping("/inquiry-out-account")
+    public ResponseEntity<InquiryOutResponse> inquiryOutAcct(
+            @RequestHeader("Device-ID") String deviceId,
+            @RequestBody InquiryOutRequest request) throws Exception {
+        log.info(">>> START inquiryOutAcct >>>");
+        log.info("> request body: {}", request);
+        long start = System.currentTimeMillis();
+
+        InquiryOutResponse finalResponse = inquiryOutService.inquiryOut(request, deviceId);
+
+        log.info("< Final response: {} | duration_ms={}", finalResponse, System.currentTimeMillis() - start);
+        log.info("<<< END inquiryOutAcct request <<<");
         return ResponseEntity.ok(finalResponse);
     }
 }

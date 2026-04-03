@@ -7,8 +7,10 @@ import com.lbb.lmps.dto.MemberListResponse;
 import com.lbb.lmps.dto.SmartMemberListResponse;
 import com.lbb.lmps.remote.ApiMSmart;
 import com.lbb.lmps.service.MemberListService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+@Slf4j
 @Service
 public class MemberListServiceImpl implements MemberListService {
 
@@ -24,14 +26,17 @@ public class MemberListServiceImpl implements MemberListService {
 
     @Override
     public MemberListResponse getMemberList(MemberListRequest request) throws Exception {
-        String rawResponse = apiMSmart.callMemberList(request);
+        log.info("[getMemberList] request={}", request);
+        long start = System.currentTimeMillis();
 
+        String rawResponse = apiMSmart.callMemberList(request);
         SmartMemberListResponse smartResponse = MAPPER.readValue(rawResponse, SmartMemberListResponse.class);
 
         MemberListResponse response = new MemberListResponse();
         response.setData(smartResponse.getData());
         response.setStatus("SUCCESS".equalsIgnoreCase(smartResponse.getResponseStatus()) ? "success" : "failed");
 
+        log.info("[getMemberList] status={} duration_ms={}", response.getStatus(), System.currentTimeMillis() - start);
         return response;
     }
 }
