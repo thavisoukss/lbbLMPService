@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "sqlcl": {
+      "command": "/Users/nohder/Applications/sqlcl/bin/sql",
+      "args": ["-mcp"]
+    }
+  }
+}
