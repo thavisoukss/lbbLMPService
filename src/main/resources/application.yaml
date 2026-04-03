@@ -6,7 +6,7 @@ logging:
 
 server:
   servlet:
-    context-path: /lmps/api
+    context-path: /lmps
 management:
   tracing:
     sampling:

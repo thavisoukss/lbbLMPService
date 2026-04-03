@@ -22,7 +22,9 @@ public class SecurityConfig {
         http
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/auth/**", "/help-check", "/member-list").permitAll()
+                        .requestMatchers("/auth/**"
+                                , "/help-check"
+                                , "/get-member-list").permitAll()
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtAuthFilter,

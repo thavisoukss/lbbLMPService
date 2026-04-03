@@ -27,7 +27,7 @@ public class Controller {
         return "******* LMPS Service working *******";
     }
 
-    @GetMapping("/member-list")
+    @GetMapping("/get-member-list")
     public ResponseEntity<MemberListResponse> getMemberList(@RequestHeader("Authorization") String authorization) throws Exception {
         log.info(">>> START getMemberList >>>");
         log.info("> NO request body:");
