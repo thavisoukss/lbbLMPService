@@ -12,8 +12,10 @@ public interface SecurityQuestionRepository extends JpaRepository<SecurityQuesti
     @Query(nativeQuery = true, value =
             "SELECT sq.ID as id, sq.DESCRIPTION as description " +
             "FROM SECURITY_QUESTIONS sq " +
-            "JOIN CUSTOMER_SECURITY_QUESTIONS csq ON sq.ID = csq.QUESTION_ID " +
-            "WHERE csq.CUSTOMER_ID = :customerId")
+            "JOIN CUSTOMER_SECURITY_QUESTIONS csq ON sq.ID = csq.SECURITY_QUESTIONS_ID " +
+            "WHERE csq.CUSTOMER_ID = :customerId " +
+            "AND csq.DELETE_AT IS NULL " +
+            "AND sq.STATUS = 'ACTIVE' AND sq.DELETE_AT IS NULL")
     List<SecurityQuestionProjection> findByCustomerId(@Param("customerId") String customerId);
 
     interface SecurityQuestionProjection {

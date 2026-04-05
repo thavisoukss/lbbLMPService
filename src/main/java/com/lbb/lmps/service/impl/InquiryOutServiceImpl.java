@@ -4,7 +4,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.lbb.lmps.dto.*;
 import com.lbb.lmps.remote.ApiMSmart;
-import com.lbb.lmps.entity.Account;
 import com.lbb.lmps.repository.AccountRepository;
 import com.lbb.lmps.repository.SecurityQuestionRepository;
 import com.lbb.lmps.service.InquiryOutService;
@@ -14,6 +13,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.UUID;
@@ -33,17 +33,20 @@ public class InquiryOutServiceImpl implements InquiryOutService {
     private final CommonInfo commonInfo;
 
     @Override
+    @Transactional(readOnly = true)
     public InquiryOutResponse inquiryOut(InquiryOutRequest request, String deviceId) throws Exception {
         log.info("[inquiryOut] deviceId={} toAccount={} toMember={}", deviceId, request.getToAccount(), request.getToMember());
         long start = System.currentTimeMillis();
 
         Claims claims = (Claims) SecurityContextHolder.getContext().getAuthentication().getDetails();
         String userId = claims.getSubject();
-        String customerId = (String) claims.get("customerId");
-        String mobileNo = (String) claims.get("mobileNo");
+        String customerId = (String) claims.get("user-id");
+        String mobileNo = (String) claims.get("user-phone");
 
-        String accountNo = accountRepository.findByCustomerId(customerId)
-                .map(Account::getAccountNo)
+        // print log output for token value
+        log.info("[inquiryOut] userId={} customerId={} mobileNo={}", userId, customerId, mobileNo);
+
+        String accountNo = accountRepository.findAccountNoByCustomerId(customerId)
                 .orElseThrow(() -> {
                     log.warn("[inquiryOut] no account found for customerId={}", customerId);
                     return new RuntimeException("No account found for customer: " + customerId);

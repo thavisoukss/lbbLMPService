@@ -3,10 +3,14 @@ package com.lbb.lmps.controller;
 import com.lbb.lmps.dto.*;
 import com.lbb.lmps.service.InquiryOutService;
 import com.lbb.lmps.service.MemberListService;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.Collections;
+import java.util.stream.Collectors;
 
 @Slf4j
 @RestController
@@ -24,8 +28,10 @@ public class Controller {
     }
 
     @GetMapping("/get-member-list")
-    public ResponseEntity<MemberListResponse> getMemberList(@RequestHeader("Authorization") String authorization) throws Exception {
+    public ResponseEntity<MemberListResponse> getMemberList(@RequestHeader("Authorization") String authorization,
+                                                            HttpServletRequest httpRequest) throws Exception {
         log.info(">>> START getMemberList >>>");
+        log.info("> request headers: {}", Collections.list(httpRequest.getHeaderNames()).stream().collect(Collectors.toMap(h -> h, h -> httpRequest.getHeader(h))));
         log.info("> NO request body:");
         long start = System.currentTimeMillis();
 
@@ -51,8 +57,10 @@ public class Controller {
     @PostMapping("/inquiry-out-account")
     public ResponseEntity<InquiryOutResponse> inquiryOutAcct(
             @RequestHeader("Device-ID") String deviceId,
-            @RequestBody InquiryOutRequest request) throws Exception {
+            @RequestBody InquiryOutRequest request,
+            HttpServletRequest httpRequest) throws Exception {
         log.info(">>> START inquiryOutAcct >>>");
+        log.info("> request headers: {}", Collections.list(httpRequest.getHeaderNames()).stream().collect(Collectors.toMap(h -> h, h -> httpRequest.getHeader(h))));
         log.info("> request body: {}", request);
         long start = System.currentTimeMillis();
 

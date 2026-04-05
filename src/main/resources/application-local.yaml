@@ -2,16 +2,15 @@
 server:
   port: 8084
 baseurl: /api/lmps
-#spring:
-#  datasource:
-#    continue-on-error: true # ໃຫ້ເຮັດວຽກຕໍ່ເຖິງຈະມີ Error ຕອນ Init DB
-#    url: jdbc:oracle:thin:@//localhost:1521/xe
-#    username: myuser
-#    password: mypassword
-#    driver-class-name: oracle.jdbc.OracleDriver
-#  jpa:
-#    database-platform: org.hibernate.dialect.Oracle12cDialect
-#    show-sql: true
+spring:
+  datasource:
+    url: jdbc:oracle:thin:@//172.16.4.79:1521/cdbmbuat.lbb.local
+    username: mb_uat
+    password: qwertyui
+    driver-class-name: oracle.jdbc.OracleDriver
+  jpa:
+    database-platform: org.hibernate.dialect.OracleDialect
+    show-sql: false
 external:
   api:
     client:
