@@ -17,6 +17,7 @@ the internal **m-smart** service via REST.
 - /docs/api/       → our controller endpoints (request/response)
 - /docs/logic/     → business flow and rules
 - /docs/external/  → external APIs we call (m-smart, cbs, etc)
+- /docs/db/        → schema / table notes
 
 ---
 

@@ -5,6 +5,19 @@
 
 ---
 
+## Logging
+
+Every endpoint logs all incoming HTTP request headers immediately after the `>>> START` line:
+
+```
+>>> START <methodName> >>>
+> request headers: {authorization=Bearer <jwt>, device-id=<id>, content-type=application/json, ...}
+```
+
+Headers are logged as a flat key=value map. Sensitive values (e.g. `Authorization`) will appear in full — ensure log access is restricted in production.
+
+---
+
 ## Endpoints
 
 ### GET /help-check
@@ -64,7 +77,7 @@ Returns the list of PromptPay/QR member banks available for cross-bank transfer.
 
 ---
 
-### POST /inquiry-out _(planned)_
+### POST /inquiry-out-account
 Inquiry for an outbound cross-bank transfer — validates recipient and returns fee schedule.
 
 **Headers**
