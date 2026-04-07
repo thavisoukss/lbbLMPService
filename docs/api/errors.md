@@ -28,6 +28,7 @@ All error responses across every controller and exception handler follow this st
 |------|-------------|-------------|
 | `ER_INVALID_TOKEN` | `401` | Missing or invalid JWT token |
 | `ER_TOKEN_EXPIRED` | `401` | JWT token has expired |
+| `ER_MSMART_ERROR`  | `200` | m-smart rejected the request (business error) |
 
 ---
 

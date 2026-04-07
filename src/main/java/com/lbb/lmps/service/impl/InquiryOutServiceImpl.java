@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.lbb.lmps.dto.*;
 import com.lbb.lmps.dto.SmartQrInfoRequest.QrData;
+import com.lbb.lmps.exception.MSmartException;
 import com.lbb.lmps.remote.ApiMSmart;
 import com.lbb.lmps.repository.AccountRepository;
 import com.lbb.lmps.repository.SecurityQuestionRepository;
@@ -89,9 +90,13 @@ public class InquiryOutServiceImpl implements InquiryOutService {
 
         String rawResponse = apiMSmart.callInquiryOut(smartRequest);
         SmartInquiryOutResponse smartResponse = MAPPER.readValue(rawResponse, SmartInquiryOutResponse.class);
+        if (!"0000".equals(smartResponse.getResponseCode())) {
+            log.warn("[inquiryOut] m-smart error | code={} msg={}", smartResponse.getResponseCode(), smartResponse.getResponseMessage());
+            throw new MSmartException(smartResponse.getResponseCode(), smartResponse.getResponseMessage());
+        }
 
         InquiryOutResponse response = new InquiryOutResponse();
-        response.setStatus("SUCCESS".equalsIgnoreCase(smartResponse.getResponseStatus()) ? "success" : "failed");
+        response.setStatus("success");
         response.setData(smartResponse.getData());
         response.setXNonce(UUID.randomUUID().toString());
         response.setQuestions(questions);
@@ -147,6 +152,10 @@ public class InquiryOutServiceImpl implements InquiryOutService {
 
         String rawQrInfo = apiMSmart.callQrInfo(qrInfoRequest);
         SmartQrInfoResponse qrInfoResponse = MAPPER.readValue(rawQrInfo, SmartQrInfoResponse.class);
+        if (!"0000".equals(qrInfoResponse.getResponseCode())) {
+            log.warn("[inquiryOutQr] m-smart QR info error | code={} msg={}", qrInfoResponse.getResponseCode(), qrInfoResponse.getResponseMessage());
+            throw new MSmartException(qrInfoResponse.getResponseCode(), qrInfoResponse.getResponseMessage());
+        }
         QrInfoData qrInfo = qrInfoResponse.getData();
         log.info("[inquiryOutQr] qrInfo receiverId={} memberId={}", qrInfo.getReceiverId(), qrInfo.getMemberId());
 
@@ -159,7 +168,7 @@ public class InquiryOutServiceImpl implements InquiryOutService {
         data.setFromaccount(accountNo);
         data.setFromCif(customerId);
         data.setToType("QR");
-        data.setToaccount(qrInfo.getReceiverId());
+        data.setToaccount(qr);
         data.setTomember(qrInfo.getMemberId());
 
         SmartInquiryOutRequest smartRequest = new SmartInquiryOutRequest();
@@ -169,6 +178,10 @@ public class InquiryOutServiceImpl implements InquiryOutService {
 
         String rawResponse = apiMSmart.callInquiryOut(smartRequest);
         SmartInquiryOutResponse smartResponse = MAPPER.readValue(rawResponse, SmartInquiryOutResponse.class);
+        if (!"0000".equals(smartResponse.getResponseCode())) {
+            log.warn("[inquiryOutQr] m-smart inquiry error | code={} msg={}", smartResponse.getResponseCode(), smartResponse.getResponseMessage());
+            throw new MSmartException(smartResponse.getResponseCode(), smartResponse.getResponseMessage());
+        }
 
         // Merge QR-specific fields into the inquiry data
         InquiryOutData inquiryData = smartResponse.getData() != null ? smartResponse.getData() : new InquiryOutData();
@@ -177,7 +190,7 @@ public class InquiryOutServiceImpl implements InquiryOutService {
         inquiryData.setCity(qrInfo.getCity());
 
         InquiryOutResponse response = new InquiryOutResponse();
-        response.setStatus("SUCCESS".equalsIgnoreCase(smartResponse.getResponseStatus()) ? "success" : "failed");
+        response.setStatus("success");
         response.setData(inquiryData);
         response.setXNonce(UUID.randomUUID().toString());
         response.setQuestions(questions);
