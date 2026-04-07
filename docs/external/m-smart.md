@@ -1,3 +1,14 @@
+## Response Convention
+
+All m-smart API responses use `responseCode` to indicate the result:
+
+| `responseCode` | Meaning |
+|----------------|---------|
+| `"0000"` | Success |
+| anything else | Error |
+
+---
+
 ## m-smart API paths (configured under `external.api.m-smart`)
 | Key | Path |
 |-----|------|
@@ -78,8 +89,8 @@
     "fromuser": "user123",
     "fromaccount": "1200174910002059",
     "fromCif": "2001749",   // client No
-    "toType": "ACCOUNT",   
-    "toaccount": "0100000947725",     // destination bank. e.g: BCEL's account
+    "toType": "ACCOUNT",              // "ACCOUNT" or "QR"
+    "toaccount": "0100000947725",     // ACCOUNT: destination account no. | QR: raw QR string value
     "tomember": "IB"
   }
 }
