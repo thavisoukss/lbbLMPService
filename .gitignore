@@ -32,3 +32,4 @@ build/
 ### VS Code ###
 .vscode/
 .mcp.json
+/.claude/settings.local.json
