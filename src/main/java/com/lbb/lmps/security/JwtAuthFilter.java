@@ -4,6 +4,8 @@ package com.lbb.lmps.security;
 import io.jsonwebtoken.Claims;
 import jakarta.servlet.*;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.http.MediaType;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
@@ -31,20 +33,34 @@ public class JwtAuthFilter extends GenericFilter {
         String authHeader = httpReq.getHeader("Authorization");
 
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
-
             String token = authHeader.substring(7);
-            String username = jwtService.validate(token);
+            try {
+                String username = jwtService.validate(token);
+                Claims claims = jwtService.getClaims(token);
 
-            Claims claims = jwtService.getClaims(token);
-
-            UsernamePasswordAuthenticationToken authentication =
-                    new UsernamePasswordAuthenticationToken(
-                            username,
-                            null,
-                            Collections.emptyList());
-            authentication.setDetails(claims);
-            SecurityContextHolder.getContext().setAuthentication(authentication);
+                UsernamePasswordAuthenticationToken authentication =
+                        new UsernamePasswordAuthenticationToken(
+                                username,
+                                null,
+                                Collections.emptyList());
+                authentication.setDetails(claims);
+                SecurityContextHolder.getContext().setAuthentication(authentication);
+            } catch (RuntimeException e) {
+                boolean expired = e.getMessage() != null && e.getMessage().contains("expired");
+                writeUnauthorized((HttpServletResponse) response,
+                        expired ? "ER_TOKEN_EXPIRED" : "ER_INVALID_TOKEN",
+                        e.getMessage());
+                return;
+            }
         }
         chain.doFilter(request, response);
+    }
+
+    private void writeUnauthorized(HttpServletResponse response, String code, String message) throws IOException {
+        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+        response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+        response.getWriter().write(
+                "{\"status\":\"error\",\"error\":{\"code\":\"" + code + "\"},\"message\":\"" + message + "\"}"
+        );
     }
 }
