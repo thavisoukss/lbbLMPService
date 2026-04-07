@@ -15,9 +15,9 @@ management:
 external:
   api:
     m-smart:
-      path-root: /m-smart/lmps
-      path-member-list: /member/list
-      path-inq-out: /out/inquiry/register
-      path-trf-out: /out/transfer
+      path-root: /m-smart
+      path-member-list: /lmps/member/list
+      path-inq-out: /lmps/out/inquiry/register
+      path-trf-out: /lmps/out/transfer
       path-build-qr: /qr/generate
       path-qr-info: /qr/info

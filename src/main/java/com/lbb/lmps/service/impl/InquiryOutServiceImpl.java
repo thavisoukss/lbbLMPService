@@ -3,6 +3,7 @@ package com.lbb.lmps.service.impl;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.lbb.lmps.dto.*;
+import com.lbb.lmps.dto.SmartQrInfoRequest.QrData;
 import com.lbb.lmps.remote.ApiMSmart;
 import com.lbb.lmps.repository.AccountRepository;
 import com.lbb.lmps.repository.SecurityQuestionRepository;
@@ -96,6 +97,92 @@ public class InquiryOutServiceImpl implements InquiryOutService {
         response.setQuestions(questions);
 
         log.info("[inquiryOut] status={} duration_ms={}", response.getStatus(), System.currentTimeMillis() - start);
+        return response;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public InquiryOutResponse inquiryOutQr(String qr, String deviceId) throws Exception {
+        log.info("[inquiryOutQr] deviceId={} qr={}", deviceId, qr);
+        long start = System.currentTimeMillis();
+
+        Claims claims = (Claims) SecurityContextHolder.getContext().getAuthentication().getDetails();
+        String userId = claims.getSubject();
+        String customerId = (String) claims.get("user-id");
+        String mobileNo = (String) claims.get("user-phone");
+
+        log.info("[inquiryOutQr] userId={} customerId={} mobileNo={}", userId, customerId, mobileNo);
+
+        String accountNo = accountRepository.findAccountNoByCustomerId(customerId)
+                .orElseThrow(() -> {
+                    log.warn("[inquiryOutQr] no account found for customerId={}", customerId);
+                    return new RuntimeException("No account found for customer: " + customerId);
+                });
+
+        List<SecurityQuestionRepository.SecurityQuestionProjection> projections =
+                securityQuestionRepository.findByCustomerId(customerId);
+        if (projections.isEmpty()) {
+            log.warn("[inquiryOutQr] no security questions found for customerId={}", customerId);
+            throw new RuntimeException("No security questions found for customer: " + customerId);
+        }
+        List<SecurityQuestionDto> questions = projections.stream()
+                .map(p -> new SecurityQuestionDto(p.getId(), p.getDescription()))
+                .toList();
+
+        ClientInfo clientInfo = new ClientInfo();
+        clientInfo.setDeviceId(deviceId);
+        clientInfo.setMobileNo(mobileNo);
+        clientInfo.setUserId(userId);
+
+        SecurityContext securityContext = new SecurityContext();
+        securityContext.setChannel("MOBILE");
+
+        // Step 1: call m-smart QR info to resolve toAccount and toMember from qrString
+        QrData qrData = new QrData();
+        qrData.setQrString(qr);
+        SmartQrInfoRequest qrInfoRequest = new SmartQrInfoRequest();
+        qrInfoRequest.setClientInfo(clientInfo);
+        qrInfoRequest.setSecurityContext(securityContext);
+        qrInfoRequest.setData(qrData);
+
+        String rawQrInfo = apiMSmart.callQrInfo(qrInfoRequest);
+        SmartQrInfoResponse qrInfoResponse = MAPPER.readValue(rawQrInfo, SmartQrInfoResponse.class);
+        QrInfoData qrInfo = qrInfoResponse.getData();
+        log.info("[inquiryOutQr] qrInfo receiverId={} memberId={}", qrInfo.getReceiverId(), qrInfo.getMemberId());
+
+        // Step 2: call m-smart inquiry-out using resolved account/member from QR info
+        String txnId = commonInfo.genTransactionId("");
+
+        SmartInquiryDataRequest data = new SmartInquiryDataRequest();
+        data.setTxnId(txnId);
+        data.setFromuser(userId);
+        data.setFromaccount(accountNo);
+        data.setFromCif(customerId);
+        data.setToType("QR");
+        data.setToaccount(qrInfo.getReceiverId());
+        data.setTomember(qrInfo.getMemberId());
+
+        SmartInquiryOutRequest smartRequest = new SmartInquiryOutRequest();
+        smartRequest.setClientInfo(clientInfo);
+        smartRequest.setSecurityContext(securityContext);
+        smartRequest.setData(data);
+
+        String rawResponse = apiMSmart.callInquiryOut(smartRequest);
+        SmartInquiryOutResponse smartResponse = MAPPER.readValue(rawResponse, SmartInquiryOutResponse.class);
+
+        // Merge QR-specific fields into the inquiry data
+        InquiryOutData inquiryData = smartResponse.getData() != null ? smartResponse.getData() : new InquiryOutData();
+        inquiryData.setTxnCurrency(qrInfo.getTxnCurrency());
+        inquiryData.setPurposeOfTxn(qrInfo.getPurposeOfTxn());
+        inquiryData.setCity(qrInfo.getCity());
+
+        InquiryOutResponse response = new InquiryOutResponse();
+        response.setStatus("SUCCESS".equalsIgnoreCase(smartResponse.getResponseStatus()) ? "success" : "failed");
+        response.setData(inquiryData);
+        response.setXNonce(UUID.randomUUID().toString());
+        response.setQuestions(questions);
+
+        log.info("[inquiryOutQr] status={} duration_ms={}", response.getStatus(), System.currentTimeMillis() - start);
         return response;
     }
 }

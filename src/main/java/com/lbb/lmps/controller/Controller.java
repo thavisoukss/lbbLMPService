@@ -54,6 +54,23 @@ public class Controller {
         return ResponseEntity.ok(finalResponse);
     }
 
+    @PostMapping("/inquiry-out-qr")
+    public ResponseEntity<InquiryOutResponse> inquiryOutQr(
+            @RequestHeader("Device-ID") String deviceId,
+            @RequestParam("qr") String qr,
+            HttpServletRequest httpRequest) throws Exception {
+        log.info(">>> START inquiryOutQr >>>");
+        log.info("> request headers: {}", Collections.list(httpRequest.getHeaderNames()).stream().collect(Collectors.toMap(h -> h, h -> httpRequest.getHeader(h))));
+        log.info("> qr param: {}", qr);
+        long start = System.currentTimeMillis();
+
+        InquiryOutResponse finalResponse = inquiryOutService.inquiryOutQr(qr, deviceId);
+
+        log.info("< Final response: {} | duration_ms={}", finalResponse, System.currentTimeMillis() - start);
+        log.info("<<< END inquiryOutQr request <<<");
+        return ResponseEntity.ok(finalResponse);
+    }
+
     @PostMapping("/inquiry-out-account")
     public ResponseEntity<InquiryOutResponse> inquiryOutAcct(
             @RequestHeader("Device-ID") String deviceId,

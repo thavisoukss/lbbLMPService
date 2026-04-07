@@ -5,4 +5,5 @@ import com.lbb.lmps.dto.InquiryOutResponse;
 
 public interface InquiryOutService {
     InquiryOutResponse inquiryOut(InquiryOutRequest request, String deviceId) throws Exception;
+    InquiryOutResponse inquiryOutQr(String qr, String deviceId) throws Exception;
 }

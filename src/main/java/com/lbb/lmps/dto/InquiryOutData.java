@@ -22,4 +22,8 @@ public class InquiryOutData {
     private String accountname;
     private String accountccy;
     private FeeList feelist;
+    // QR-specific fields (populated only for QR inquiry flow)
+    private String txnCurrency;
+    private String purposeOfTxn;
+    private String city;
 }

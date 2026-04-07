@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.lbb.lmps.dto.MemberListRequest;
 import com.lbb.lmps.dto.SmartInquiryOutRequest;
+import com.lbb.lmps.dto.SmartQrInfoRequest;
 import io.micrometer.tracing.Tracer;
 import io.micrometer.tracing.propagation.Propagator;
 import org.apache.logging.log4j.LogManager;
@@ -35,6 +36,9 @@ public class ApiMSmart {
     @Value("${external.api.m-smart.path-inq-out}")
     private String pathInqOut;
 
+    @Value("${external.api.m-smart.path-qr-info}")
+    private String pathQrInfo;
+
     private final RestClient restClient;
     private final Tracer tracer;
     private final Propagator propagator;
@@ -62,6 +66,12 @@ public class ApiMSmart {
     public String callInquiryOut(SmartInquiryOutRequest request) throws Exception {
         String uriPath = pathRoot + pathInqOut;
         log.info(":: Calling m-smart inquiry-out at URI: {}", uriPath);
+        return post(uriPath, MAPPER.writeValueAsString(request));
+    }
+
+    public String callQrInfo(SmartQrInfoRequest request) throws Exception {
+        String uriPath = pathRoot + pathQrInfo;
+        log.info(":: Calling m-smart qr-info at URI: {}", uriPath);
         return post(uriPath, MAPPER.writeValueAsString(request));
     }
 
