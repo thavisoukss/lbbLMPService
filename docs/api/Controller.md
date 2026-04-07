@@ -174,7 +174,7 @@ Inquiry for an outbound cross-bank transfer — validates recipient and returns 
 
 ---
 
-### GET /inquiry-out-qr
+### POST /inquiry-out-qr
 Inquiry for an outbound cross-bank transfer via QR code — validates recipient and returns fee schedule.
 
 **Headers**

@@ -7,6 +7,58 @@
 | build QR | `/m-smart/lmps/qr/generate` |
 | QR info | `/m-smart/lmps/qr/info` |
 
+### POST - QR info - `/m-smart/lmps/qr/info`
+
+**Request body**
+```json
+{
+  "clientInfo": {
+    "deviceId": "device1234567",
+    "mobileNo": "2059355555",
+    "userId": "user001"
+  },
+  "securityContext": {
+    "channel": "MOBILE"
+  },
+  "data": {
+    "qrString": "00020101021238680016A00526628466257701087003041802030010325LRV25288QOSY68AFCZJ7PUE1V520448295303418540815000.005802LA6009Vientiane62160812test_dynamic63040B1B" // LDB Dynamic
+  }
+}
+```
+
+**Response `200 OK`**
+```json
+{
+  "responseCode": "0000",
+  "responseMessage": "Transaction completed successfully",
+  "responseStatus": "SUCCESS",
+  "responseTimestamp": "2025-10-20T08:32:28.125243700Z",
+  "clientInfo": {
+    "deviceId": "device1234567",
+    "mobileNo": "2059355555",
+    "userId": "user001"
+  },
+  "data": {
+    "payloadFormatIndicator": "01",
+    "pointOfInitiation": "12",
+    "applicationId": "A005266284662577",
+    "iin": "70030418",
+    "qrPaymentType": "001",
+    "receiverId": "LRV25288QOSY68AFCZJ7PUE1V",
+    "mcc": "4829",
+    "txnCurrency": "418",
+    "txnAmount": "15000.00",
+    "countryCode": "LA",
+    "name": null,
+    "city": "Vientiane",
+    "purposeOfTxn": "test_dynamic",
+    "memberId": "LDB",
+    "memberName": "LDB"
+  }
+}
+```
+
+
 ### POST - inquiry out - `/m-smart/lmps/out/inquiry/register`
 `"toType": "ACCOUNT"` for account and `"toType": "QR"` for QR
 
@@ -119,3 +171,4 @@
   }
 }
 ```
+

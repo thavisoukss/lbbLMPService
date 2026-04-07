@@ -1,6 +1,6 @@
 # Inquiry Out — Business Flow
 
-**Endpoint:** `POST /inquiry-out`  
+**Endpoint:** `POST /inquiry-out-account`  
 **Ref:** `/docs/api/Controller.md`
 
 ---
