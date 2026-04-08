@@ -21,10 +21,6 @@ external:
     m-smart:
       url: http://localhost:7001
 
-# ການຕັ້ງຄ່າ Log4j2
-logging:
-  config: classpath:log4j2.xml
-
 management:
   tracing:
     sampling:

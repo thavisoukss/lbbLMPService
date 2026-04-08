@@ -1,8 +1,8 @@
 spring:
+  application:
+    name: lbb-lmps
   profiles:
     active: local
-logging:
-  config: classpath:log4j2.xml
 
 server:
   servlet:

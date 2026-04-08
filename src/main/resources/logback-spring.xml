@@ -1,17 +1,70 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration>
 
-    <!-- Include Spring Boot default -->
-    <include resource="org/springframework/boot/logging/logback/base.xml"/>
-
-    <!-- Customize pattern -->
+    <include resource="org/springframework/boot/logging/logback/defaults.xml"/>
     <property name="CONSOLE_LOG_PATTERN"
-              value="%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger - %msg%n"/>
+              value="${CONSOLE_LOG_PATTERN:-%clr(%d{${LOG_DATEFORMAT_PATTERN:-yyyy-MM-dd HH:mm:ss.SSS}}){faint} %clr(${LOG_LEVEL_PATTERN:-%5p}) %clr(${PID:- }){magenta} %clr(---){faint} %clr([%15.15t]){faint} %clr(%-40.40logger{39}){cyan} %clr(:){faint} %m%n${LOG_EXCEPTION_CONVERSION_WORD:-%wEx}}"/>
+    <property name="LOG_LOCATION" value="./logs"/>
+    <property name="LOG_ARCHIVED_DIR" value="archived"/>
+    <springProperty scope="context" name="APP_NAME" source="spring.application.name"/>
 
-    <!-- Root logger -->
-    <root level="INFO">
-        <appender-ref ref="CONSOLE"/>
-        <appender-ref ref="FILE" />
-    </root>
+    <!-- Plain text console — human-readable for local development -->
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
+            <pattern>${CONSOLE_LOG_PATTERN}</pattern>
+            <charset>utf8</charset>
+        </encoder>
+    </appender>
+
+    <!-- JSON console — for production/Docker where logs are collected by a log shipper -->
+    <appender name="CONSOLE_JSON" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder class="net.logstash.logback.encoder.LogstashEncoder">
+            <customFields>{"app":"${APP_NAME}"}</customFields>
+        </encoder>
+    </appender>
+
+    <!-- JSON rolling file — structured output for log aggregation (traceId/spanId included via MDC) -->
+    <appender name="RollingFile" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_LOCATION}/${APP_NAME}_${HOSTNAME}.log</file>
+        <encoder class="net.logstash.logback.encoder.LogstashEncoder">
+            <customFields>{"app":"${APP_NAME}"}</customFields>
+        </encoder>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>${LOG_LOCATION}/${LOG_ARCHIVED_DIR}/${APP_NAME}-${HOSTNAME}-%d{yyyy-MM-dd}.%i.log</fileNamePattern>
+            <timeBasedFileNamingAndTriggeringPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedFNATP">
+                <maxFileSize>100MB</maxFileSize>
+            </timeBasedFileNamingAndTriggeringPolicy>
+        </rollingPolicy>
+    </appender>
+
+    <springProfile name="local,dev">
+        <root level="info">
+            <appender-ref ref="CONSOLE"/>
+            <appender-ref ref="RollingFile"/>
+        </root>
+        <logger name="org.hibernate" level="error" additivity="false">
+            <appender-ref ref="CONSOLE"/>
+            <appender-ref ref="RollingFile"/>
+        </logger>
+        <logger name="com.lbb.lmps" level="trace" additivity="false">
+            <appender-ref ref="CONSOLE"/>
+            <appender-ref ref="RollingFile"/>
+        </logger>
+    </springProfile>
+
+    <springProfile name="prod">
+        <root level="info">
+            <appender-ref ref="CONSOLE_JSON"/>
+            <appender-ref ref="RollingFile"/>
+        </root>
+        <logger name="org.hibernate" level="error" additivity="false">
+            <appender-ref ref="CONSOLE_JSON"/>
+            <appender-ref ref="RollingFile"/>
+        </logger>
+        <logger name="com.lbb.lmps" level="info" additivity="false">
+            <appender-ref ref="CONSOLE_JSON"/>
+            <appender-ref ref="RollingFile"/>
+        </logger>
+    </springProfile>
 
 </configuration>
