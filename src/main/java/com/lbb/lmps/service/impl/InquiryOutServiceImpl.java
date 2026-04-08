@@ -42,48 +42,24 @@ public class InquiryOutServiceImpl implements InquiryOutService {
         String userId = claims.getSubject();
         String customerId = (String) claims.get("user-id");
         String mobileNo = (String) claims.get("user-phone");
-
-        // print log output for token value
         log.info("[inquiryOut] userId={} customerId={} mobileNo={}", userId, customerId, mobileNo);
 
-        String accountNo = accountRepository.findAccountNoByCustomerId(customerId)
-                .orElseThrow(() -> {
-                    log.warn("[inquiryOut] no account found for customerId={}", customerId);
-                    return new RuntimeException("No account found for customer: " + customerId);
-                });
-
-        List<SecurityQuestionRepository.SecurityQuestionProjection> projections =
-                securityQuestionRepository.findByCustomerId(customerId);
-        if (projections.isEmpty()) {
-            log.warn("[inquiryOut] no security questions found for customerId={}", customerId);
-            throw new RuntimeException("No security questions found for customer: " + customerId);
-        }
-        List<SecurityQuestionDto> questions = projections.stream()
-                .map(p -> new SecurityQuestionDto(p.getId(), p.getDescription()))
-                .toList();
+        CustomerContext ctx = loadCustomerContext(customerId, deviceId, userId, mobileNo, "inquiryOut");
 
         String txnId = commonInfo.genTransactionId("");
-
-        ClientInfo clientInfo = new ClientInfo();
-        clientInfo.setDeviceId(deviceId);
-        clientInfo.setMobileNo(mobileNo);
-        clientInfo.setUserId(userId);
-
-        SecurityContext securityContext = new SecurityContext();
-        securityContext.setChannel("MOBILE");
 
         SmartInquiryDataRequest data = new SmartInquiryDataRequest();
         data.setTxnId(txnId);
         data.setFromuser(userId);
-        data.setFromaccount(accountNo);
+        data.setFromaccount(ctx.accountNo());
         data.setFromCif(customerId);
         data.setToType("ACCOUNT");
         data.setToaccount(request.getToAccount());
         data.setTomember(request.getToMember());
 
         SmartInquiryOutRequest smartRequest = new SmartInquiryOutRequest();
-        smartRequest.setClientInfo(clientInfo);
-        smartRequest.setSecurityContext(securityContext);
+        smartRequest.setClientInfo(ctx.clientInfo());
+        smartRequest.setSecurityContext(ctx.securityContext());
         smartRequest.setData(data);
 
         String rawResponse = apiMSmart.callInquiryOut(smartRequest);
@@ -97,7 +73,7 @@ public class InquiryOutServiceImpl implements InquiryOutService {
         response.setStatus("success");
         response.setData(smartResponse.getData());
         response.setXNonce(UUID.randomUUID().toString());
-        response.setQuestions(questions);
+        response.setQuestions(ctx.questions());
 
         log.info("[inquiryOut] status={} duration_ms={}", response.getStatus(), System.currentTimeMillis() - start);
         return response;
@@ -112,39 +88,16 @@ public class InquiryOutServiceImpl implements InquiryOutService {
         String userId = claims.getSubject();
         String customerId = (String) claims.get("user-id");
         String mobileNo = (String) claims.get("user-phone");
-
         log.info("[inquiryOutQr] userId={} customerId={} mobileNo={}", userId, customerId, mobileNo);
 
-        String accountNo = accountRepository.findAccountNoByCustomerId(customerId)
-                .orElseThrow(() -> {
-                    log.warn("[inquiryOutQr] no account found for customerId={}", customerId);
-                    return new RuntimeException("No account found for customer: " + customerId);
-                });
-
-        List<SecurityQuestionRepository.SecurityQuestionProjection> projections =
-                securityQuestionRepository.findByCustomerId(customerId);
-        if (projections.isEmpty()) {
-            log.warn("[inquiryOutQr] no security questions found for customerId={}", customerId);
-            throw new RuntimeException("No security questions found for customer: " + customerId);
-        }
-        List<SecurityQuestionDto> questions = projections.stream()
-                .map(p -> new SecurityQuestionDto(p.getId(), p.getDescription()))
-                .toList();
-
-        ClientInfo clientInfo = new ClientInfo();
-        clientInfo.setDeviceId(deviceId);
-        clientInfo.setMobileNo(mobileNo);
-        clientInfo.setUserId(userId);
-
-        SecurityContext securityContext = new SecurityContext();
-        securityContext.setChannel("MOBILE");
+        CustomerContext ctx = loadCustomerContext(customerId, deviceId, userId, mobileNo, "inquiryOutQr");
 
         // Step 1: call m-smart QR info to resolve toAccount and toMember from qrString
         QrData qrData = new QrData();
         qrData.setQrString(qr);
         SmartQrInfoRequest qrInfoRequest = new SmartQrInfoRequest();
-        qrInfoRequest.setClientInfo(clientInfo);
-        qrInfoRequest.setSecurityContext(securityContext);
+        qrInfoRequest.setClientInfo(ctx.clientInfo());
+        qrInfoRequest.setSecurityContext(ctx.securityContext());
         qrInfoRequest.setData(qrData);
 
         String rawQrInfo = apiMSmart.callQrInfo(qrInfoRequest);
@@ -162,15 +115,15 @@ public class InquiryOutServiceImpl implements InquiryOutService {
         SmartInquiryDataRequest data = new SmartInquiryDataRequest();
         data.setTxnId(txnId);
         data.setFromuser(userId);
-        data.setFromaccount(accountNo);
+        data.setFromaccount(ctx.accountNo());
         data.setFromCif(customerId);
         data.setToType("QR");
         data.setToaccount(qr);
         data.setTomember(qrInfo.getMemberId());
 
         SmartInquiryOutRequest smartRequest = new SmartInquiryOutRequest();
-        smartRequest.setClientInfo(clientInfo);
-        smartRequest.setSecurityContext(securityContext);
+        smartRequest.setClientInfo(ctx.clientInfo());
+        smartRequest.setSecurityContext(ctx.securityContext());
         smartRequest.setData(data);
 
         String rawResponse = apiMSmart.callInquiryOut(smartRequest);
@@ -190,9 +143,44 @@ public class InquiryOutServiceImpl implements InquiryOutService {
         response.setStatus("success");
         response.setData(inquiryData);
         response.setXNonce(UUID.randomUUID().toString());
-        response.setQuestions(questions);
+        response.setQuestions(ctx.questions());
 
         log.info("[inquiryOutQr] status={} duration_ms={}", response.getStatus(), System.currentTimeMillis() - start);
         return response;
+    }
+
+    private record CustomerContext(
+            String accountNo,
+            List<SecurityQuestionDto> questions,
+            ClientInfo clientInfo,
+            SecurityContext securityContext
+    ) {}
+
+    private CustomerContext loadCustomerContext(String customerId, String deviceId, String userId, String mobileNo, String logTag) {
+        String accountNo = accountRepository.findAccountNoByCustomerId(customerId)
+                .orElseThrow(() -> {
+                    log.warn("[{}] no account found for customerId={}", logTag, customerId);
+                    return new RuntimeException("No account found for customer: " + customerId);
+                });
+
+        List<SecurityQuestionRepository.SecurityQuestionProjection> projections =
+                securityQuestionRepository.findByCustomerId(customerId);
+        if (projections.isEmpty()) {
+            log.warn("[{}] no security questions found for customerId={}", logTag, customerId);
+            throw new RuntimeException("No security questions found for customer: " + customerId);
+        }
+        List<SecurityQuestionDto> questions = projections.stream()
+                .map(p -> new SecurityQuestionDto(p.getId(), p.getDescription()))
+                .toList();
+
+        ClientInfo clientInfo = new ClientInfo();
+        clientInfo.setDeviceId(deviceId);
+        clientInfo.setMobileNo(mobileNo);
+        clientInfo.setUserId(userId);
+
+        SecurityContext securityContext = new SecurityContext();
+        securityContext.setChannel("MOBILE");
+
+        return new CustomerContext(accountNo, questions, clientInfo, securityContext);
     }
 }
