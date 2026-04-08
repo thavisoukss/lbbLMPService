@@ -3,6 +3,7 @@ package com.lbb.lmps.service.impl;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.lbb.lmps.dto.*;
+import com.lbb.lmps.exception.MSmartException;
 import com.lbb.lmps.remote.ApiMSmart;
 import com.lbb.lmps.service.MemberListService;
 import io.jsonwebtoken.Claims;
@@ -47,10 +48,14 @@ public class MemberListServiceImpl implements MemberListService {
 
         String rawResponse = apiMSmart.callMemberList(request);
         SmartMemberListResponse smartResponse = MAPPER.readValue(rawResponse, SmartMemberListResponse.class);
+        if (!"0000".equals(smartResponse.getResponseCode())) {
+            log.warn("[getMemberList] m-smart error | code={} msg={}", smartResponse.getResponseCode(), smartResponse.getResponseMessage());
+            throw new MSmartException(smartResponse.getResponseCode(), smartResponse.getResponseMessage());
+        }
 
         MemberListResponse response = new MemberListResponse();
         response.setData(smartResponse.getData());
-        response.setStatus("SUCCESS".equalsIgnoreCase(smartResponse.getResponseStatus()) ? "success" : "failed");
+        response.setStatus("success");
 
         log.info("[getMemberList] status={} duration_ms={}", response.getStatus(), System.currentTimeMillis() - start);
         return response;

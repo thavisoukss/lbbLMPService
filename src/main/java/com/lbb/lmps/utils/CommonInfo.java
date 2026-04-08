@@ -10,14 +10,13 @@ import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Calendar;
 import java.util.Date;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.ThreadLocalRandom;
 
 @Component
 @Slf4j
 public class CommonInfo {
 
 
-    private static final AtomicInteger counterTxn = new AtomicInteger(0);
 
     /**
      * gen request date time
@@ -107,7 +106,7 @@ public class CommonInfo {
         long currentMilliseconds = System.currentTimeMillis();
         int last3digits = (int) (currentMilliseconds % 1000);
 
-        return pre + year + dayOfYearFmt + timeToSecond + last3digits + String.format("%03d", counterTxn.getAndIncrement() % 1000);
+        return pre + year + dayOfYearFmt + timeToSecond + String.format("%03d", last3digits) + String.format("%03d", ThreadLocalRandom.current().nextInt(1000));
     }
 
     public static void main(String[] args) {
