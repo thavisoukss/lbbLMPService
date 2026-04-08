@@ -21,9 +21,24 @@ the internal **m-smart** service via REST.
 
 ---
 
+## Profiles & Config
+
+| Profile | File | Purpose |
+|---------|------|---------|
+| `dev` (default) | `application-dev.yaml` | Dev/staging — m-smart at `172.16.4.18:7001` |
+| `local` | `application-local.yaml` | Local dev — same external URLs, DB commented out |
+
+Active profile is set in `application.yaml` via `spring.profiles.active`.
+
+---
+
 ## Controller Logging Pattern
 
-Every controller method **must** follow this exact structure (no exceptions):
+**What**: Every controller method must log START, request body, END, final response, and duration_ms — no exceptions.
+
+**Why**: Enables end-to-end traceability and duration monitoring in production without attaching a debugger. Financial transactions require an audit trail at every entry point.
+
+**How**: Follow this exact structure in every controller method:
 
 ```java
 log.info(">>> START {methodName} >>>");
@@ -43,84 +58,71 @@ long start = System.currentTimeMillis();
 log.info("< Final response: {} | duration_ms={}", finalResponse, System.currentTimeMillis() - start);
 log.info("<<< END logon request <<<");
 ```
+
 ---
 
 ## Coding Standards
 
-- **No temporary fixes** — find root causes; senior-developer standards
-- **Minimal code** — don't add abstractions, helpers, or error handling for scenarios that can't happen
-- **Simplicity first** — smallest change that solves the problem; impact minimal code
-- Use `SLF4J` / `Log4j2` for all logging — never `System.out.println`
-- Oracle JDBC (`ojdbc8`) for DB; JPA for data access — use `@Transactional` appropriately
-- Use `RestClient` for calls to external API (connect-timeout: 5 s, read-timeout: 10 s)
+### No Temporary Fixes
+**What**: Always find and fix the root cause. No workarounds or patches.
+**Why**: Temporary fixes accumulate as hidden debt in a financial middleware — they surface as incidents in production.
+**How**: Before writing code, identify the actual failure point. If a fix feels like a patch, it is — find the real cause instead.
 
----
+### Minimal Code
+**What**: Don't add abstractions, helpers, or error handling for scenarios that can't happen.
+**Why**: Unnecessary code increases cognitive load and surface area for bugs.
+**How**: Ask "can this scenario actually occur?" before adding a code path. If not, omit it.
 
-## Profiles & Config
+### Simplicity First
+**What**: Make the smallest change that solves the problem.
+**Why**: Overengineering introduces risk in a system with hard uptime requirements.
+**How**: Write the change, then ask "can this be smaller?" before submitting.
 
-| Profile | File | Purpose |
-|---------|------|---------|
-| `dev` (default) | `application-dev.yaml` | Dev/staging — m-smart at `172.16.4.18:7001` |
-| `local` | `application-local.yaml` | Local dev — same external URLs, DB commented out |
+### Logging
+**What**: Use `SLF4J` / `Log4j2` for all logging.
+**Why**: Consistent log format enables log aggregation and alerting. `System.out.println` bypasses the logging pipeline entirely.
+**How**: Inject `Logger log = LoggerFactory.getLogger(...)` — never use `System.out.println` or `System.err`.
 
-Active profile is set in `application.yaml` via `spring.profiles.active`.
+### Database Access
+**What**: Use Oracle JDBC (`ojdbc8`) with JPA. Apply `@Transactional` at the service layer — read-only queries use `@Transactional(readOnly = true)`.
+**Why**: Consistent transaction boundaries prevent partial writes. Read-only hints allow Oracle to skip undo log generation, improving query performance.
+**How**: Annotate service methods, not repositories. Write operations get `@Transactional`; read-only queries get `@Transactional(readOnly = true)`.
+
+### External API Calls
+**What**: Use `RestClient` for all calls to external APIs with connect-timeout 5 s and read-timeout 10 s.
+**Why**: m-smart and CBS can hang under load — unbounded timeouts will exhaust the thread pool.
+**How**: Configure timeouts in the `RestClient` bean. Never use `RestTemplate` or raw `HttpURLConnection`.
 
 ---
 
 ## Workflow Rules
 
 ### 1. Plan Mode Default
-- Enter plan mode for ANY not-trivial task (3+ steps or architectural decisions)
-- Use plan mode for verification steps, not just building
-- Write detailed specs upfront to reduce ambiguity
+**What**: Enter plan mode for any non-trivial task — 3+ steps or any architectural decision.
+**Why**: Implementing before aligning on approach wastes effort and introduces risk of rework.
+**How**: Use plan mode for both building and verification steps. Write detailed specs upfront before touching code.
 
 ### 2. Self-Improvement Loop
-- After ANY correction from the user: update `tasks/lessons.md` with the pattern
-- Write rules for yourself that prevent the same mistake
-- Ruthlessly iterate on these lessons until the mistake rate drops
-- Review lessons at session start for a project
+**What**: After any correction from the user, update `tasks/lessons.md` with the pattern and a rule to prevent recurrence.
+**Why**: Repeating the same mistake signals a missing rule, not a one-off error. Persistent rules eliminate classes of mistakes.
+**How**: Record the pattern that caused the mistake, the rule that prevents it, and review `tasks/lessons.md` at the start of each session.
 
 ### 3. Verification Before Done
-- Never mark a task complete without proving it works
-- Diff behavior between main and your changes when relevant
-- Ask yourself: *"Would a staff engineer approve this?"*
-- Run tests, check logs, demonstrate correctness
+**What**: Never mark a task complete without proving it works.
+**Why**: Unverified work creates a false sense of progress and pushes debugging cost to the user.
+**How**: Run tests, check logs, and diff behavior between main and your changes. Ask: *"Would a staff engineer approve this?"*
 
-### 4. After a Correction
-Update `tasks/lessons.md` with the pattern that caused the mistake and a rule to prevent it next time.
+### 4. Demand Elegance (Balanced)
+**What**: For non-trivial changes, pause and evaluate whether a more elegant solution exists before finalizing.
+**Why**: Hacky solutions compound — in a financial API, a clever shortcut today becomes an incident tomorrow.
+**How**: After writing a fix, ask *"Knowing everything I know now, is this the elegant solution?"* Skip this step for simple, obvious fixes. Don't overengineer.
 
-### 5. Demand Elegance (Balanced)
-- For non-trivial changes: pause and ask *"is there a more elegant way?"*
-- If a fix feels hacky: "Knowing everything I know now, implement the elegant solution"
-- Skip this for simple, obvious fixes. Don't overengineer
-- Challenge your own work before presenting it
+### 5. Skills Usage
+**What**: Use skills for any task that matches an available capability.
+**Why**: Skills encapsulate specialized patterns and prevent reinventing solved problems.
+**How**: Load skills from `.claude/skills/`. Invoke with natural language. Treat each skill as one independent capability.
 
-### 6. Skills usage
-- Use skills for any task that requires a capability
-- Load skills from `.claude/skills/`
-- Invoke skills with natural language
-- Each skill is one independent capability
-
-### 7. Subagents usage
-- Use subagents liberally to keep the main context window clean
-- Load subagents from `.claude/agents/`
-- For complex problems, throw more compute at it via subagents
-- One task per subagent for focused execution on a given tech stack
-
-## Core Principles
-- **Simplicity First**: Make every change as simple as possible. Impact minimal code
-- **No Laziness**: Find root causes. No temporary fixes. Senior developer standards
----
-
-## Project General Conventions
-- Always use the latest versions of dependencies.
-- Always write Java code as the Spring Boot application.
-- Always use Maven for dependency management.
-- Always create test cases for the generated code both positive and negative.
-- Always generate the CircleCI pipeline in the .circleci directory to verify the code.
-- Minimize the amount of code generated.
-- The Maven artifact name must be the same as the parent directory name.
-- Use semantic versioning for the Maven project. Each time you generate a new version, bump the PATCH section of the version number.
-- Use `pl.piomin.services` as the group ID for the Maven project and base Java package.
-- Generate the Docker Compose file to run all components used by the application.
-- Update `README.md` each time you generate a new version.
+### 6. Subagents Usage
+**What**: Delegate complex or isolated subtasks to subagents.
+**Why**: Subagents keep the main context window clean and allow focused execution per tech area.
+**How**: Load subagents from `.claude/agents/`. Assign one task per subagent. For complex problems, use multiple subagents in parallel.
