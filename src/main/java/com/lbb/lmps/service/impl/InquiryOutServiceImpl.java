@@ -15,7 +15,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.UUID;
@@ -35,7 +34,6 @@ public class InquiryOutServiceImpl implements InquiryOutService {
     private final CommonInfo commonInfo;
 
     @Override
-    @Transactional(readOnly = true)
     public InquiryOutResponse inquiryOut(InquiryOutRequest request, String deviceId) throws Exception {
         log.info("[inquiryOut] deviceId={} toAccount={} toMember={}", deviceId, request.getToAccount(), request.getToMember());
         long start = System.currentTimeMillis();
@@ -106,7 +104,6 @@ public class InquiryOutServiceImpl implements InquiryOutService {
     }
 
     @Override
-    @Transactional(readOnly = true)
     public InquiryOutResponse inquiryOutQr(String qr, String deviceId) throws Exception {
         log.info("[inquiryOutQr] deviceId={} qr={}", deviceId, qr);
         long start = System.currentTimeMillis();
