@@ -7,8 +7,7 @@ import com.lbb.lmps.dto.SmartInquiryOutRequest;
 import com.lbb.lmps.dto.SmartQrInfoRequest;
 import io.micrometer.tracing.Tracer;
 import io.micrometer.tracing.propagation.Propagator;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -18,10 +17,9 @@ import org.springframework.web.client.RestClient;
 import java.nio.charset.StandardCharsets;
 import java.util.Optional;
 
+@Slf4j
 @Service
 public class ApiMSmart {
-
-    private static final Logger log = LogManager.getLogger(ApiMSmart.class);
 
     private static final ObjectMapper MAPPER = new ObjectMapper()
             .findAndRegisterModules()

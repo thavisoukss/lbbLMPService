@@ -23,6 +23,16 @@ public class GlobalExceptionHandler {
         );
     }
 
+    @ExceptionHandler(ResourceNotFoundException.class)
+    public ResponseEntity<?> handleResourceNotFound(ResourceNotFoundException e) {
+        log.warn("Resource not found: {}", e.getMessage());
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(
+                Map.of("status", "error",
+                       "error", Map.of("code", "RESOURCE_NOT_FOUND"),
+                       "message", e.getMessage())
+        );
+    }
+
     @ExceptionHandler(MSmartException.class)
     public ResponseEntity<?> handleMSmart(MSmartException e) {
         log.warn("m-smart business error: {}", e.getMessage());

@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import com.lbb.lmps.dto.*;
 import com.lbb.lmps.dto.SmartQrInfoRequest.QrData;
 import com.lbb.lmps.exception.MSmartException;
+import com.lbb.lmps.exception.ResourceNotFoundException;
 import com.lbb.lmps.remote.ApiMSmart;
 import com.lbb.lmps.repository.AccountRepository;
 import com.lbb.lmps.repository.SecurityQuestionRepository;
@@ -160,14 +161,14 @@ public class InquiryOutServiceImpl implements InquiryOutService {
         String accountNo = accountRepository.findAccountNoByCustomerId(customerId)
                 .orElseThrow(() -> {
                     log.warn("[{}] no account found for customerId={}", logTag, customerId);
-                    return new RuntimeException("No account found for customer: " + customerId);
+                    return new ResourceNotFoundException("No account found for customer: " + customerId);
                 });
 
         List<SecurityQuestionRepository.SecurityQuestionProjection> projections =
                 securityQuestionRepository.findByCustomerId(customerId);
         if (projections.isEmpty()) {
             log.warn("[{}] no security questions found for customerId={}", logTag, customerId);
-            throw new RuntimeException("No security questions found for customer: " + customerId);
+            throw new ResourceNotFoundException("No security questions found for customer: " + customerId);
         }
         List<SecurityQuestionDto> questions = projections.stream()
                 .map(p -> new SecurityQuestionDto(p.getId(), p.getDescription()))
