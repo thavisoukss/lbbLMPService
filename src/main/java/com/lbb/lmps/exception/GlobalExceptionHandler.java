@@ -1,7 +1,9 @@
 package com.lbb.lmps.exception;
 
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.MissingRequestHeaderException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
@@ -10,6 +12,16 @@ import java.util.Map;
 @Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+
+    @ExceptionHandler(MissingRequestHeaderException.class)
+    public ResponseEntity<?> handleMissingHeader(MissingRequestHeaderException e) {
+        log.warn("Missing required header: {}", e.getHeaderName());
+        return ResponseEntity.badRequest().body(
+                Map.of("status", "error",
+                       "error", Map.of("code", "MISSING_HEADER"),
+                       "message", "Required header '" + e.getHeaderName() + "' is not present")
+        );
+    }
 
     @ExceptionHandler(MSmartException.class)
     public ResponseEntity<?> handleMSmart(MSmartException e) {
