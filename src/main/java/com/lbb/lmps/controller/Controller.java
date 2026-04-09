@@ -3,6 +3,7 @@ package com.lbb.lmps.controller;
 import com.lbb.lmps.dto.*;
 import com.lbb.lmps.service.InquiryOutService;
 import com.lbb.lmps.service.MemberListService;
+import com.lbb.lmps.service.TransferOutService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -16,6 +17,7 @@ public class Controller {
 
     private final MemberListService memberListService;
     private final InquiryOutService inquiryOutService;
+    private final TransferOutService transferOutService;
 
     @GetMapping("/help-check")
     public String testService() {
@@ -63,6 +65,21 @@ public class Controller {
 
         log.info("< Final response: {} | duration_ms={}", finalResponse, System.currentTimeMillis() - start);
         log.info("<<< END inquiryOutAcct request <<<");
+        return ResponseEntity.ok(finalResponse);
+    }
+
+    @PostMapping("/transfer-out-qr-quotation-verify")
+    public ResponseEntity<TransferOutQrResponse> transferOutQrQuotationVerify(
+            @RequestHeader("Device-ID") String deviceId,
+            @RequestBody TransferOutQrRequest request) throws Exception {
+        log.info(">>> START transferOutQrQuotationVerify >>>");
+        log.info("> request body: {}", request);
+        long start = System.currentTimeMillis();
+
+        TransferOutQrResponse finalResponse = transferOutService.transferOutQr(request, deviceId);
+
+        log.info("< Final response: {} | duration_ms={}", finalResponse, System.currentTimeMillis() - start);
+        log.info("<<< END transferOutQrQuotationVerify request <<<");
         return ResponseEntity.ok(finalResponse);
     }
 }
