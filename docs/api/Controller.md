@@ -1,6 +1,6 @@
 # LMPS Service — API Reference
 
-**Base URL:** `http://<host>:8084/lmps`  
+**Base URL:** `http://<host>:8084/api/lmps`  
 **Authentication:** All endpoints require `Authorization: Bearer <JWT>` (RS256) except `/auth/**`
 
 ---
@@ -267,3 +267,91 @@ GET /lmps/api/inquiry-out-qr?qr=xxxxxxxxxxxxxxxxxxxxxxxx
 | `questions` | array | Security questions the user must answer before transfer |
 | `questions[].id` | string | Question ID (`SQ1`–`SQ3`) |
 | `questions[].description` | string | Question text in Lao |
+
+---
+
+### POST /transfer-out-qr-quotation-verify
+Execute an outbound cross-bank transfer via QR code. Verifies security answers and performs the transfer in a single call.
+
+**Headers**
+
+| Header | Required | Description |
+|--------|----------|-------------|
+| `Authorization` | Yes | `Bearer <JWT>` |
+| `Content-Type` | Yes | `application/json` |
+| `Device-ID` | Yes | Unique device identifier |
+
+**Request body**
+```json
+{
+  "x_nonce": "efbcee4d-b7b6-4db8-98c3-0a1c3f840f08",
+  "qr_string": "00020101021138670016A00526628466257701082771041802030010324AHOMALYBLVREXGTFJEOYBULW53034185802LA63048D13",
+  "amount": 1100,
+  "purpose": "hello world",
+  "first_question_id": "SQ4",
+  "first_answer": "1234",
+  "second_question_id": "SQ5",
+  "second_answer": "1234",
+  "third_question_id": "SQ6",
+  "third_answer": "1234"
+}
+```
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `x_nonce` | string | Nonce returned from the `/inquiry-out-qr` step |
+| `qr_string` | string | Raw QR code string scanned from the recipient |
+| `amount` | number | Transfer amount |
+| `purpose` | string | Purpose/note for the transfer |
+| `first_question_id` | string | ID of the first security question |
+| `first_answer` | string | Answer to the first security question |
+| `second_question_id` | string | ID of the second security question |
+| `second_answer` | string | Answer to the second security question |
+| `third_question_id` | string | ID of the third security question |
+| `third_answer` | string | Answer to the third security question |
+
+**Response `200 OK`**
+```json
+{
+  "transaction_id": "INOL202604091356348PAD69XI",
+  "slip_code": "INOL202604091356348PAD69XI",
+  "tran_date": "2026-04-09 20:55:37",
+  "total_amount": 1100,
+  "currency_code": "LAK",
+  "fee_amt": 1000,
+  "dr_account_no": "1200182110002250",
+  "dr_account_name": "PITI-PHANTHASOMBATH",
+  "cr_account_no": "00020101021138670016A00526628466257701082771041802030010324AHOMALYBLVREXGTFJEOYBULW53034185802LA63048D13",
+  "cr_account_name": "PHONEPASERD SIMPHAVONG MR",
+  "provider_ref": "LBBAT2LOPPAIUHYFG73PUDF",
+  "purpose": "hello world"
+}
+```
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `transaction_id` | string | Unique transaction ID |
+| `slip_code` | string | Slip/receipt code (same as `transaction_id`) |
+| `tran_date` | string | Transaction datetime (`YYYY-MM-DD HH:mm:ss`) |
+| `total_amount` | number | Total amount transferred |
+| `currency_code` | string | Currency of the transaction |
+| `fee_amt` | number | Fee charged for the transaction |
+| `dr_account_no` | string | Sender (debit) account number |
+| `dr_account_name` | string | Sender account name |
+| `cr_account_no` | string | Recipient (credit) — raw QR string |
+| `cr_account_name` | string | Recipient account name |
+| `provider_ref` | string | m-smart provider reference |
+| `purpose` | string | Purpose/note of the transfer |
+
+**Error response**
+```json
+{
+  "status": "error",
+  "error": {
+    "code": "ER_INTERNAL_SERVER_ERROR"
+  },
+  "message": "Failed to transfer via QR"
+}
+```
+
+See [errors.md](errors.md) for the full error response format.

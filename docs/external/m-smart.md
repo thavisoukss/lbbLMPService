@@ -70,6 +70,90 @@ All m-smart API responses use `responseCode` to indicate the result:
 ```
 
 
+### POST - transfer out - `/m-smart/lmps/out/transfer`
+
+**Request body**
+```json
+{
+  "requestId": null,
+  "clientInfo": {
+    "deviceId": "813a3982-78d9-433a-a92e-6abd30a201ae",
+    "mobileNo": "2097778968",
+    "userId": "2508-0000113-8"
+  },
+  "securityContext": {
+    "channel": "MSMART"
+  },
+  "data": {
+    "txnId": "INOL202604091356348PAD69XI",
+    "cbsRefNo": null,
+    "txnType": "LMPOTA",
+    "txnAmount": 1100,
+    "txnFee": 1000,
+    "txnCcy": "LAK",
+    "purpose": "hello world",
+    "fromUserId": "PITI-PHANTHASOMBATH",
+    "fromCustName": "PITI-PHANTHASOMBATH",
+    "fromAcctId": "1200182110002250",
+    "fromCif": null,
+    "toCustName": "PHONEPASERD SIMPHAVONG MR",
+    "toAcctId": "00020101021138670016A00526628466257701082771041802030010324AHOMALYBLVREXGTFJEOYBULW53034185802LA63048D13",
+    "toCif": null,
+    "toType": "QR",   // "ACCOUNT" or "QR"
+    "toMemberId": "BCEL"
+  }
+}
+```
+
+**Response `200 OK` — success**
+```json
+{
+  "responseCode": "0000",
+  "responseMessage": "Transaction completed successfully",
+  "responseStatus": "SUCCESS",
+  "responseTimestamp": "2026-04-09T13:57:01.906812891Z",
+  "clientInfo": {
+    "deviceId": "813a3982-78d9-433a-a92e-6abd30a201ae",
+    "mobileNo": "2097778968",
+    "userId": "2508-0000113-8"
+  },
+  "data": {
+    "txnId": "INOL202604091356348PAD69XI",
+    "cbsRefNo": "INT0000060003254",
+    "txnType": "LMPOTA",
+    "txnAmount": 1100,
+    "txnFee": 1000.0,
+    "txnCcy": "LAK",
+    "purpose": "hello world",
+    "fromUserId": "PITI-PHANTHASOMBATH",
+    "fromCustName": "PITI-PHANTHASOMBATH",
+    "fromAcctId": "1200182110002250",
+    "fromCif": null,
+    "toCustName": "PHONEPASERD SIMPHAVONG MR",
+    "toAcctId": "00020101021138670016A00526628466257701082771041802030010324AHOMALYBLVREXGTFJEOYBULW53034185802LA63048D13",
+    "toCif": null,
+    "toType": "QR",
+    "toMemberId": "BCEL"
+  }
+}
+```
+
+**Response `200 OK` — error**
+```json
+{
+  "responseCode": "3011",
+  "responseMessage": "This transaction has already been completed",
+  "responseStatus": "FAILED",
+  "responseTimestamp": "2026-04-09T13:57:56.110364517Z",
+  "clientInfo": {
+    "deviceId": "cfb52850-a2ca-4048-a130-e8894826b834",
+    "mobileNo": "2097778968",
+    "userId": "2508-0000113-8"
+  }
+}
+```
+
+
 ### POST - inquiry out - `/m-smart/lmps/out/inquiry/register`
 `"toType": "ACCOUNT"` for account and `"toType": "QR"` for QR
 
