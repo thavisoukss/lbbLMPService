@@ -1,7 +1,7 @@
 {
   "mcpServers": {
     "sqlcl": {
-      "command": "/Users/nohder/Applications/sqlcl/bin/sql",
+      "command": "C:\\Users\\ax2106010\\applications\\sqlcl\\bin\\sql.exe",
       "args": ["-mcp"]
     }
   }

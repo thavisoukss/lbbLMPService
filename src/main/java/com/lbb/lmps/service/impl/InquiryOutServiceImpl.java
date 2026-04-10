@@ -4,11 +4,13 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.lbb.lmps.dto.*;
 import com.lbb.lmps.dto.SmartQrInfoRequest.QrData;
+import com.lbb.lmps.entity.WithdrawTxn;
 import com.lbb.lmps.exception.MSmartException;
 import com.lbb.lmps.exception.ResourceNotFoundException;
 import com.lbb.lmps.remote.ApiMSmart;
 import com.lbb.lmps.repository.AccountRepository;
 import com.lbb.lmps.repository.SecurityQuestionRepository;
+import com.lbb.lmps.repository.WithdrawTxnRepository;
 import com.lbb.lmps.service.InquiryOutService;
 import com.lbb.lmps.utils.CommonInfo;
 import io.jsonwebtoken.Claims;
@@ -16,7 +18,10 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -29,9 +34,12 @@ public class InquiryOutServiceImpl implements InquiryOutService {
             .findAndRegisterModules()
             .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
 
+    private static final long PAYMENT_CHANNEL_ID = 25L;
+
     private final ApiMSmart apiMSmart;
     private final AccountRepository accountRepository;
     private final SecurityQuestionRepository securityQuestionRepository;
+    private final WithdrawTxnRepository withdrawTxnRepository;
     private final CommonInfo commonInfo;
 
     @Override
@@ -70,10 +78,14 @@ public class InquiryOutServiceImpl implements InquiryOutService {
             throw new MSmartException(smartResponse.getResponseCode(), smartResponse.getResponseMessage());
         }
 
+        String customerName = accountRepository.findCustomerNameById(customerId).orElse(userId);
+        String xNonce = UUID.randomUUID().toString();
+        saveInquiryRecord(customerId, customerName, ctx.accountNo(), xNonce, smartResponse.getData(), "ACCOUNT");
+
         InquiryOutResponse response = new InquiryOutResponse();
         response.setStatus("success");
         response.setData(smartResponse.getData());
-        response.setXNonce(UUID.randomUUID().toString());
+        response.setXNonce(xNonce);
         response.setQuestions(ctx.questions());
 
         log.info("[inquiryOut] status={} duration_ms={}", response.getStatus(), System.currentTimeMillis() - start);
@@ -140,14 +152,50 @@ public class InquiryOutServiceImpl implements InquiryOutService {
         inquiryData.setPurposeOfTxn(qrInfo.getPurposeOfTxn());
         inquiryData.setCity(qrInfo.getCity());
 
+        String customerName = accountRepository.findCustomerNameById(customerId).orElse(userId);
+        String xNonce = UUID.randomUUID().toString();
+        saveInquiryRecord(customerId, customerName, ctx.accountNo(), xNonce, inquiryData, "QR");
+
         InquiryOutResponse response = new InquiryOutResponse();
         response.setStatus("success");
         response.setData(inquiryData);
-        response.setXNonce(UUID.randomUUID().toString());
+        response.setXNonce(xNonce);
         response.setQuestions(ctx.questions());
 
         log.info("[inquiryOutQr] status={} duration_ms={}", response.getStatus(), System.currentTimeMillis() - start);
         return response;
+    }
+
+    @Transactional
+    private void saveInquiryRecord(String customerId, String customerName, String accountNo,
+                                   String nonce, InquiryOutData data, String toType) {
+        String ccy = (data.getAccountccy() != null && !data.getAccountccy().isBlank())
+                ? data.getAccountccy() : "LAK";
+
+        WithdrawTxn txn = new WithdrawTxn();
+        txn.setPaymentChannelId(PAYMENT_CHANNEL_ID);
+        txn.setCustomerId(customerId);
+        txn.setTransactionId(data.getTxnId());
+        txn.setNonce(nonce);
+        txn.setProviderCode("LMPS");
+        txn.setStatus("DEBIT_PENDING");
+        txn.setDrAccountNo(accountNo);
+        txn.setDrCif(customerId);
+        txn.setDrAccountName(customerName);
+        txn.setCrAccountNo("QR".equals(toType) ? data.getAccountname() : data.getToaccount());
+        txn.setCrAccountName(data.getAccountname());
+        txn.setAmount(BigDecimal.ZERO);
+        txn.setFeeAmt(BigDecimal.ZERO);
+        txn.setFeeProviderAmt(BigDecimal.ZERO);
+        txn.setCurrencyCode(ccy);
+        txn.setFeeCurrencyCode(ccy);
+        txn.setFeeProviderCurrencyCode(ccy);
+        txn.setRemark(toType);
+        txn.setCreatedAt(LocalDateTime.now());
+        txn.setVersion(1L);
+
+        withdrawTxnRepository.save(txn);
+        log.info("[saveInquiryRecord] saved WITHDRAW_TXN txnId={} toType={}", data.getTxnId(), toType);
     }
 
     private record CustomerContext(
