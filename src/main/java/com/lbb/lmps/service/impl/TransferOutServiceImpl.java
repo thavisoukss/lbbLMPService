@@ -4,17 +4,18 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.lbb.lmps.dto.*;
 import com.lbb.lmps.dto.SmartQrInfoRequest.QrData;
+import com.lbb.lmps.entity.WithdrawTxn;
 import com.lbb.lmps.exception.MSmartException;
 import com.lbb.lmps.exception.ResourceNotFoundException;
 import com.lbb.lmps.remote.ApiMSmart;
-import com.lbb.lmps.repository.AccountRepository;
+import com.lbb.lmps.repository.WithdrawTxnRepository;
 import com.lbb.lmps.service.TransferOutService;
-import com.lbb.lmps.utils.CommonInfo;
 import io.jsonwebtoken.Claims;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -33,12 +34,12 @@ public class TransferOutServiceImpl implements TransferOutService {
     private static final DateTimeFormatter TRAN_DATE_FMT = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
     private final ApiMSmart apiMSmart;
-    private final AccountRepository accountRepository;
-    private final CommonInfo commonInfo;
+    private final WithdrawTxnRepository withdrawTxnRepository;
 
     @Override
+    @Transactional
     public TransferOutQrResponse transferOutQr(TransferOutQrRequest request, String deviceId) throws Exception {
-        log.info("[transferOutQr] deviceId={} amount={}", deviceId, request.getAmount());
+        log.info("[transferOutQr] deviceId={} amount={} nonce={}", deviceId, request.getAmount(), request.getXNonce());
         long start = System.currentTimeMillis();
 
         Claims claims = (Claims) SecurityContextHolder.getContext().getAuthentication().getDetails();
@@ -47,11 +48,19 @@ public class TransferOutServiceImpl implements TransferOutService {
         String mobileNo = (String) claims.get("user-phone");
         log.info("[transferOutQr] userId={} customerId={}", userId, customerId);
 
-        String accountNo = accountRepository.findAccountNoByCustomerId(customerId)
+        // Step 1: fetch WITHDRAW_TXN by x_nonce
+        WithdrawTxn withdrawTxn = withdrawTxnRepository.findByNonce(request.getXNonce())
                 .orElseThrow(() -> {
-                    log.warn("[transferOutQr] no account found for customerId={}", customerId);
-                    return new ResourceNotFoundException("No account found for customer: " + customerId);
+                    log.warn("[transferOutQr] no WITHDRAW_TXN found for nonce={}", request.getXNonce());
+                    return new ResourceNotFoundException("Invalid or expired transaction nonce");
                 });
+
+        if (!"DEBIT_PENDING".equals(withdrawTxn.getStatus())) {
+            log.warn("[transferOutQr] unexpected status={} for nonce={}", withdrawTxn.getStatus(), request.getXNonce());
+            throw new MSmartException("4001", "Transaction is not in pending state");
+        }
+
+        log.info("[transferOutQr] loaded WITHDRAW_TXN id={} txnId={}", withdrawTxn.getId(), withdrawTxn.getTransactionId());
 
         ClientInfo clientInfo = new ClientInfo();
         clientInfo.setDeviceId(deviceId);
@@ -61,7 +70,7 @@ public class TransferOutServiceImpl implements TransferOutService {
         SecurityContext mobileCtx = new SecurityContext();
         mobileCtx.setChannel("MOBILE");
 
-        // Step 1: QR info → resolve memberId
+        // Step 2: call QR info to resolve memberId
         QrData qrData = new QrData();
         qrData.setQrString(request.getQrString());
         SmartQrInfoRequest qrInfoRequest = new SmartQrInfoRequest();
@@ -75,20 +84,18 @@ public class TransferOutServiceImpl implements TransferOutService {
             log.warn("[transferOutQr] m-smart QR info error | code={} msg={}", qrInfoResponse.getResponseCode(), qrInfoResponse.getResponseMessage());
             throw new MSmartException(qrInfoResponse.getResponseCode(), qrInfoResponse.getResponseMessage());
         }
-        QrInfoData qrInfo = qrInfoResponse.getData();
-        log.info("[transferOutQr] qrInfo memberId={}", qrInfo.getMemberId());
+        String memberId = qrInfoResponse.getData().getMemberId();
+        log.info("[transferOutQr] qrInfo memberId={}", memberId);
 
-        // Step 2: inquiry-out → get txnId, fee list, recipient details
-        String txnId = commonInfo.genTransactionId("INOL");
-
+        // Step 3: call inquiry-out with stored txnId + resolved memberId — retrieves fee list
         SmartInquiryDataRequest inqData = new SmartInquiryDataRequest();
-        inqData.setTxnId(txnId);
+        inqData.setTxnId(withdrawTxn.getTransactionId());
         inqData.setFromuser(userId);
-        inqData.setFromaccount(accountNo);
-        inqData.setFromCif(customerId);
+        inqData.setFromaccount(withdrawTxn.getDrAccountNo());
+        inqData.setFromCif(withdrawTxn.getDrCif());
         inqData.setToType("QR");
         inqData.setToaccount(request.getQrString());
-        inqData.setTomember(qrInfo.getMemberId());
+        inqData.setTomember(memberId);
 
         SmartInquiryOutRequest inqRequest = new SmartInquiryOutRequest();
         inqRequest.setClientInfo(clientInfo);
@@ -101,34 +108,35 @@ public class TransferOutServiceImpl implements TransferOutService {
             log.warn("[transferOutQr] m-smart inquiry error | code={} msg={}", inqResponse.getResponseCode(), inqResponse.getResponseMessage());
             throw new MSmartException(inqResponse.getResponseCode(), inqResponse.getResponseMessage());
         }
+
         InquiryOutData inqResult = inqResponse.getData();
         log.info("[transferOutQr] inquiry txnId={} toCustName={}", inqResult.getTxnId(), inqResult.getAccountname());
 
-        // Step 3: calculate fee from fee list
-        BigDecimal txnFee = calculateFee(inqResult.getFeelist(), request.getAmount(), inqResult.getAccountccy());
-        log.info("[transferOutQr] calculated txnFee={} for amount={} ccy={}", txnFee, request.getAmount(), inqResult.getAccountccy());
+        // Step 4: calculate fee
+        BigDecimal txnFee = calculateFee(inqResult.getFeelist(), request.getAmount(), withdrawTxn.getCurrencyCode());
+        log.info("[transferOutQr] txnFee={} amount={} ccy={}", txnFee, request.getAmount(), withdrawTxn.getCurrencyCode());
 
-        // Step 4: execute transfer
+        // Step 5: execute transfer-out
         SecurityContext msCtx = new SecurityContext();
         msCtx.setChannel("MSMART");
 
         SmartTransferOutData transferData = new SmartTransferOutData();
-        transferData.setTxnId(inqResult.getTxnId());
+        transferData.setTxnId(withdrawTxn.getTransactionId());
         transferData.setCbsRefNo(null);
         transferData.setTxnType("LMPOTA");
         transferData.setTxnAmount(request.getAmount());
         transferData.setTxnFee(txnFee);
-        transferData.setTxnCcy(inqResult.getAccountccy());
+        transferData.setTxnCcy(withdrawTxn.getCurrencyCode());
         transferData.setPurpose(request.getPurpose());
         transferData.setFromUserId(userId);
-        transferData.setFromCustName(userId);
-        transferData.setFromAcctId(accountNo);
-        transferData.setFromCif(customerId);
-        transferData.setToCustName(inqResult.getAccountname());
+        transferData.setFromCustName(withdrawTxn.getDrAccountName());
+        transferData.setFromAcctId(withdrawTxn.getDrAccountNo());
+        transferData.setFromCif(withdrawTxn.getDrCif());
+        transferData.setToCustName(withdrawTxn.getCrAccountName());
         transferData.setToAcctId(request.getQrString());
         transferData.setToCif(null);
         transferData.setToType("QR");
-        transferData.setToMemberId(inqResult.getTomember());
+        transferData.setToMemberId(memberId);
 
         SmartTransferOutRequest transferRequest = new SmartTransferOutRequest();
         transferRequest.setRequestId(null);
@@ -142,8 +150,20 @@ public class TransferOutServiceImpl implements TransferOutService {
             log.warn("[transferOutQr] m-smart transfer error | code={} msg={}", transferResponse.getResponseCode(), transferResponse.getResponseMessage());
             throw new MSmartException(transferResponse.getResponseCode(), transferResponse.getResponseMessage());
         }
+
         SmartTransferOutData result = transferResponse.getData();
 
+        // Step 6: update WITHDRAW_TXN with final result
+        withdrawTxn.setStatus("COMPLETED");
+        withdrawTxn.setAmount(result.getTxnAmount() != null ? result.getTxnAmount() : request.getAmount());
+        withdrawTxn.setFeeAmt(result.getTxnFee() != null ? result.getTxnFee() : txnFee);
+        withdrawTxn.setFeeProviderAmt(result.getTxnFee() != null ? result.getTxnFee() : txnFee);
+        withdrawTxn.setCoreBankingRef(result.getCbsRefNo());
+        withdrawTxn.setVersion(withdrawTxn.getVersion() + 1);
+        withdrawTxnRepository.save(withdrawTxn);
+        log.info("[transferOutQr] WITHDRAW_TXN updated id={} status=COMPLETED cbsRefNo={} txnId={}", withdrawTxn.getId(), result.getCbsRefNo(), withdrawTxn.getTransactionId());
+
+        // Step 6: build response
         TransferOutQrResponse response = new TransferOutQrResponse();
         response.setTransactionId(result.getTxnId());
         response.setSlipCode(result.getTxnId());

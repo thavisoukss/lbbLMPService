@@ -71,6 +71,13 @@ public class WithdrawTxn {
     @Column(name = "REMARK")
     private String remark;
 
+    // TO_MEMBER — reserved for future use (store recipient member ID to skip QR info re-call on verify)
+    // @Column(name = "TO_MEMBER")
+    // private String toMember;
+
+    @Column(name = "CORE_BANKING_REF")
+    private String coreBankingRef;
+
     @Column(name = "CREATED_AT", nullable = false)
     private LocalDateTime createdAt;
 
