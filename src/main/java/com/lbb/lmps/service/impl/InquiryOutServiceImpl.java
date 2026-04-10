@@ -9,6 +9,7 @@ import com.lbb.lmps.exception.MSmartException;
 import com.lbb.lmps.exception.ResourceNotFoundException;
 import com.lbb.lmps.remote.ApiMSmart;
 import com.lbb.lmps.repository.AccountRepository;
+import com.lbb.lmps.repository.CustomerRepository;
 import com.lbb.lmps.repository.SecurityQuestionRepository;
 import com.lbb.lmps.repository.WithdrawTxnRepository;
 import com.lbb.lmps.service.InquiryOutService;
@@ -18,7 +19,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -34,10 +34,12 @@ public class InquiryOutServiceImpl implements InquiryOutService {
             .findAndRegisterModules()
             .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
 
+    // 25 = PAYMENT_CHANNEL.ID for 'Lao QR' — used for all outward QR/account transfers
     private static final long PAYMENT_CHANNEL_ID = 25L;
 
     private final ApiMSmart apiMSmart;
     private final AccountRepository accountRepository;
+    private final CustomerRepository customerRepository;
     private final SecurityQuestionRepository securityQuestionRepository;
     private final WithdrawTxnRepository withdrawTxnRepository;
     private final CommonInfo commonInfo;
@@ -78,9 +80,8 @@ public class InquiryOutServiceImpl implements InquiryOutService {
             throw new MSmartException(smartResponse.getResponseCode(), smartResponse.getResponseMessage());
         }
 
-        String customerName = accountRepository.findCustomerNameById(customerId).orElse(userId);
         String xNonce = UUID.randomUUID().toString();
-        saveInquiryRecord(customerId, customerName, ctx.accountNo(), xNonce, smartResponse.getData(), "ACCOUNT");
+        saveInquiryRecord(customerId, ctx.customerName(), ctx.accountNo(), xNonce, smartResponse.getData(), "ACCOUNT");
 
         InquiryOutResponse response = new InquiryOutResponse();
         response.setStatus("success");
@@ -152,9 +153,8 @@ public class InquiryOutServiceImpl implements InquiryOutService {
         inquiryData.setPurposeOfTxn(qrInfo.getPurposeOfTxn());
         inquiryData.setCity(qrInfo.getCity());
 
-        String customerName = accountRepository.findCustomerNameById(customerId).orElse(userId);
         String xNonce = UUID.randomUUID().toString();
-        saveInquiryRecord(customerId, customerName, ctx.accountNo(), xNonce, inquiryData, "QR");
+        saveInquiryRecord(customerId, ctx.customerName(), ctx.accountNo(), xNonce, inquiryData, "QR");
 
         InquiryOutResponse response = new InquiryOutResponse();
         response.setStatus("success");
@@ -166,9 +166,13 @@ public class InquiryOutServiceImpl implements InquiryOutService {
         return response;
     }
 
-    @Transactional
     private void saveInquiryRecord(String customerId, String customerName, String accountNo,
                                    String nonce, InquiryOutData data, String toType) {
+        if (data.getTxnId() == null) {
+            log.warn("[saveInquiryRecord] txnId is null, skipping WITHDRAW_TXN save toType={}", toType);
+            return;
+        }
+
         String ccy = (data.getAccountccy() != null && !data.getAccountccy().isBlank())
                 ? data.getAccountccy() : "LAK";
 
@@ -194,12 +198,17 @@ public class InquiryOutServiceImpl implements InquiryOutService {
         txn.setCreatedAt(LocalDateTime.now());
         txn.setVersion(1L);
 
-        withdrawTxnRepository.save(txn);
-        log.info("[saveInquiryRecord] saved WITHDRAW_TXN txnId={} toType={}", data.getTxnId(), toType);
+        try {
+            withdrawTxnRepository.save(txn);
+            log.info("[saveInquiryRecord] saved WITHDRAW_TXN txnId={} toType={}", data.getTxnId(), toType);
+        } catch (Exception e) {
+            log.error("[saveInquiryRecord] failed to save WITHDRAW_TXN txnId={} toType={}", data.getTxnId(), toType, e);
+        }
     }
 
     private record CustomerContext(
             String accountNo,
+            String customerName,
             List<SecurityQuestionDto> questions,
             ClientInfo clientInfo,
             SecurityContext securityContext
@@ -211,6 +220,15 @@ public class InquiryOutServiceImpl implements InquiryOutService {
                     log.warn("[{}] no account found for customerId={}", logTag, customerId);
                     return new ResourceNotFoundException("No account found for customer: " + customerId);
                 });
+
+        String customerName = customerRepository.findById(customerId)
+                .map(c -> {
+                    if (c.getName() != null && !c.getName().isBlank()) return c.getName();
+                    String en = ((c.getFirstNameEn() != null ? c.getFirstNameEn() : "") + " "
+                            + (c.getLastNameEn() != null ? c.getLastNameEn() : "")).trim();
+                    return en.isBlank() ? null : en;
+                })
+                .orElse(userId);
 
         List<SecurityQuestionRepository.SecurityQuestionProjection> projections =
                 securityQuestionRepository.findByCustomerId(customerId);
@@ -230,6 +248,6 @@ public class InquiryOutServiceImpl implements InquiryOutService {
         SecurityContext securityContext = new SecurityContext();
         securityContext.setChannel("MOBILE");
 
-        return new CustomerContext(accountNo, questions, clientInfo, securityContext);
+        return new CustomerContext(accountNo, customerName, questions, clientInfo, securityContext);
     }
 }
