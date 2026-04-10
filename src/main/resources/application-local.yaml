@@ -1,7 +1,6 @@
 
 server:
   port: 8084
-baseurl: /api/lmps
 spring:
   datasource:
     url: jdbc:oracle:thin:@//172.16.4.79:1521/cdbmbuat.lbb.local

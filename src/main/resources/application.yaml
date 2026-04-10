@@ -6,7 +6,7 @@ spring:
 
 server:
   servlet:
-    context-path: /lmps
+    context-path: /api/lmps
 management:
   tracing:
     sampling:
