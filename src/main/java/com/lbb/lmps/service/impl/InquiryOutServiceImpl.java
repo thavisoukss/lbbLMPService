@@ -198,12 +198,8 @@ public class InquiryOutServiceImpl implements InquiryOutService {
         txn.setCreatedAt(LocalDateTime.now());
         txn.setVersion(1L);
 
-        try {
-            withdrawTxnRepository.save(txn);
-            log.info("[saveInquiryRecord] saved WITHDRAW_TXN txnId={} toType={}", data.getTxnId(), toType);
-        } catch (Exception e) {
-            log.error("[saveInquiryRecord] failed to save WITHDRAW_TXN txnId={} toType={}", data.getTxnId(), toType, e);
-        }
+        withdrawTxnRepository.save(txn);
+        log.info("[saveInquiryRecord] saved WITHDRAW_TXN txnId={} toType={}", data.getTxnId(), toType);
     }
 
     private record CustomerContext(
