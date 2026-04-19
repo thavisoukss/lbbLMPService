@@ -1,7 +1,6 @@
 package com.lbb.lmps.service.impl;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
 import com.lbb.lmps.dto.*;
 import com.lbb.lmps.dto.SmartQrInfoRequest.QrData;
 import com.lbb.lmps.entity.WithdrawTxn;
@@ -31,16 +30,13 @@ import java.util.UUID;
 @Service
 public class InquiryOutServiceImpl implements InquiryOutService {
 
-    private static final ObjectMapper MAPPER = new ObjectMapper()
-            .findAndRegisterModules()
-            .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
-
     // 25 = PAYMENT_CHANNEL.ID for 'Lao QR' — used for all outward QR/account transfers
     private static final long PAYMENT_CHANNEL_ID = 25L;
     // Outward transfers always debit from the customer's LAK settlement account
     private static final String DR_ACCOUNT_CURRENCY = "LAK";
 
     private final ApiMSmart apiMSmart;
+    private final ObjectMapper mapper;
     private final AccountRepository accountRepository;
     private final CustomerRepository customerRepository;
     private final SecurityQuestionRepository securityQuestionRepository;
@@ -78,7 +74,7 @@ public class InquiryOutServiceImpl implements InquiryOutService {
         smartRequest.setData(data);
 
         String rawResponse = apiMSmart.callInquiryOut(smartRequest);
-        SmartInquiryOutResponse smartResponse = MAPPER.readValue(rawResponse, SmartInquiryOutResponse.class);
+        SmartInquiryOutResponse smartResponse = mapper.readValue(rawResponse, SmartInquiryOutResponse.class);
         if (!"0000".equals(smartResponse.getResponseCode())) {
             log.warn("[inquiryOut] m-smart error | code={} msg={}", smartResponse.getResponseCode(), smartResponse.getResponseMessage());
             throw new MSmartException(smartResponse.getResponseCode(), smartResponse.getResponseMessage());
@@ -120,7 +116,7 @@ public class InquiryOutServiceImpl implements InquiryOutService {
         qrInfoRequest.setData(qrData);
 
         String rawQrInfo = apiMSmart.callQrInfo(qrInfoRequest);
-        SmartQrInfoResponse qrInfoResponse = MAPPER.readValue(rawQrInfo, SmartQrInfoResponse.class);
+        SmartQrInfoResponse qrInfoResponse = mapper.readValue(rawQrInfo, SmartQrInfoResponse.class);
         if (!"0000".equals(qrInfoResponse.getResponseCode())) {
             log.warn("[inquiryOutQr] m-smart QR info error | code={} msg={}", qrInfoResponse.getResponseCode(), qrInfoResponse.getResponseMessage());
             throw new MSmartException(qrInfoResponse.getResponseCode(), qrInfoResponse.getResponseMessage());
@@ -146,7 +142,7 @@ public class InquiryOutServiceImpl implements InquiryOutService {
         smartRequest.setData(data);
 
         String rawResponse = apiMSmart.callInquiryOut(smartRequest);
-        SmartInquiryOutResponse smartResponse = MAPPER.readValue(rawResponse, SmartInquiryOutResponse.class);
+        SmartInquiryOutResponse smartResponse = mapper.readValue(rawResponse, SmartInquiryOutResponse.class);
         if (!"0000".equals(smartResponse.getResponseCode())) {
             log.warn("[inquiryOutQr] m-smart inquiry error | code={} msg={}", smartResponse.getResponseCode(), smartResponse.getResponseMessage());
             throw new MSmartException(smartResponse.getResponseCode(), smartResponse.getResponseMessage());
@@ -204,7 +200,7 @@ public class InquiryOutServiceImpl implements InquiryOutService {
         txn.setRemark("ACCOUNT".equals(toType) ? data.getTomember() : toType);
         txn.setCreatedAt(LocalDateTime.now());
         if (data.getFeelist() != null) {
-            txn.setFeeList(MAPPER.writeValueAsString(data.getFeelist()));
+            txn.setFeeList(mapper.writeValueAsString(data.getFeelist()));
         }
 
         withdrawTxnRepository.save(txn);

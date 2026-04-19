@@ -1,7 +1,6 @@
 package com.lbb.lmps.remote;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
 import com.lbb.lmps.dto.MemberListRequest;
 import com.lbb.lmps.dto.SmartInquiryOutRequest;
 import com.lbb.lmps.dto.SmartQrInfoRequest;
@@ -22,10 +21,6 @@ import java.util.Optional;
 @Service
 public class ApiMSmart {
 
-    private static final ObjectMapper MAPPER = new ObjectMapper()
-            .findAndRegisterModules()
-            .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
-
     @Value("${external.api.m-smart.path-root}")
     private String pathRoot;
 
@@ -44,11 +39,13 @@ public class ApiMSmart {
     private final RestClient restClient;
     private final Tracer tracer;
     private final Propagator propagator;
+    private final ObjectMapper mapper;
 
     public ApiMSmart(
             RestClient.Builder restClientBuilder,
             Tracer tracer,
             Propagator propagator,
+            ObjectMapper mapper,
             @Value("${external.api.m-smart.url}") String mSmartUrl
     ) {
         this.restClient = restClientBuilder
@@ -57,30 +54,31 @@ public class ApiMSmart {
                 .build();
         this.tracer = tracer;
         this.propagator = propagator;
+        this.mapper = mapper;
     }
 
     public String callMemberList(MemberListRequest request) throws Exception {
         String uriPath = pathRoot + pathMemberList;
         log.info(":: Calling m-smart member-list at URI: {}", uriPath);
-        return post(uriPath, MAPPER.writeValueAsString(request));
+        return post(uriPath, mapper.writeValueAsString(request));
     }
 
     public String callInquiryOut(SmartInquiryOutRequest request) throws Exception {
         String uriPath = pathRoot + pathInqOut;
         log.info(":: Calling m-smart inquiry-out at URI: {}", uriPath);
-        return post(uriPath, MAPPER.writeValueAsString(request));
+        return post(uriPath, mapper.writeValueAsString(request));
     }
 
     public String callQrInfo(SmartQrInfoRequest request) throws Exception {
         String uriPath = pathRoot + pathQrInfo;
         log.info(":: Calling m-smart qr-info at URI: {}", uriPath);
-        return post(uriPath, MAPPER.writeValueAsString(request));
+        return post(uriPath, mapper.writeValueAsString(request));
     }
 
     public String callTransferOut(SmartTransferOutRequest request) throws Exception {
         String uriPath = pathRoot + pathTrfOut;
         log.info(":: Calling m-smart transfer-out at URI: {}", uriPath);
-        return post(uriPath, MAPPER.writeValueAsString(request));
+        return post(uriPath, mapper.writeValueAsString(request));
     }
 
     private String post(String uriPath, String body) throws Exception {
@@ -100,7 +98,6 @@ public class ApiMSmart {
                         throw new RuntimeException("m-smart error: " + response.getStatusCode() + " | " + responseBody);
                     }
                     log.info(":: m-smart API Success - Status: {}", response.getStatusCode());
-                    log.info(":: http response body: {}", responseBody);
                     return responseBody;
                 });
     }

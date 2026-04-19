@@ -1,7 +1,6 @@
 package com.lbb.lmps.service.impl;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
 import com.lbb.lmps.dto.*;
 import com.lbb.lmps.exception.MSmartException;
 import com.lbb.lmps.remote.ApiMSmart;
@@ -17,11 +16,8 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class MemberListServiceImpl implements MemberListService {
 
-    private static final ObjectMapper MAPPER = new ObjectMapper()
-            .findAndRegisterModules()
-            .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
-
     private final ApiMSmart apiMSmart;
+    private final ObjectMapper mapper;
 
     @Override
     public MemberListResponse getMemberList(String deviceId) throws Exception {
@@ -47,7 +43,7 @@ public class MemberListServiceImpl implements MemberListService {
         request.setSecurityContext(securityContext);
 
         String rawResponse = apiMSmart.callMemberList(request);
-        SmartMemberListResponse smartResponse = MAPPER.readValue(rawResponse, SmartMemberListResponse.class);
+        SmartMemberListResponse smartResponse = mapper.readValue(rawResponse, SmartMemberListResponse.class);
         if (!"0000".equals(smartResponse.getResponseCode())) {
             log.warn("[getMemberList] m-smart error | code={} msg={}", smartResponse.getResponseCode(), smartResponse.getResponseMessage());
             throw new MSmartException(smartResponse.getResponseCode(), smartResponse.getResponseMessage());
