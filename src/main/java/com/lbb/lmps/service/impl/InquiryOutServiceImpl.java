@@ -198,7 +198,6 @@ public class InquiryOutServiceImpl implements InquiryOutService {
         // For QR transfers: REMARK stores "QR" as a type marker.
         txn.setRemark("ACCOUNT".equals(toType) ? data.getTomember() : toType);
         txn.setCreatedAt(LocalDateTime.now());
-        txn.setVersion(1L);
         if (data.getFeelist() != null) {
             txn.setFeeList(MAPPER.writeValueAsString(data.getFeelist()));
         }

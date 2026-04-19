@@ -3,11 +3,13 @@ package com.lbb.lmps.exception;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingRequestHeaderException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Slf4j
 @RestControllerAdvice
@@ -50,6 +52,29 @@ public class GlobalExceptionHandler {
                 Map.of("status", "error",
                        "error", Map.of("code", e.getCode()),
                        "message", e.getMessage())
+        );
+    }
+
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<?> handleValidation(MethodArgumentNotValidException e) {
+        String detail = e.getBindingResult().getFieldErrors().stream()
+                .map(fe -> fe.getField() + " " + fe.getDefaultMessage())
+                .collect(Collectors.joining(", "));
+        log.warn("Validation failed: {}", detail);
+        return ResponseEntity.badRequest().body(
+                Map.of("status", "error",
+                       "error", Map.of("code", "INVALID_REQUEST"),
+                       "message", detail)
+        );
+    }
+
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<?> handleUnexpected(Exception e) {
+        log.error("Unexpected error", e);
+        return ResponseEntity.internalServerError().body(
+                Map.of("status", "error",
+                       "error", Map.of("code", "INTERNAL_ERROR"),
+                       "message", "An unexpected error occurred")
         );
     }
 }

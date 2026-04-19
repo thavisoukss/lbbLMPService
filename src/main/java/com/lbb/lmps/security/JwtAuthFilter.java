@@ -3,20 +3,22 @@ package com.lbb.lmps.security;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.jsonwebtoken.Claims;
-import jakarta.servlet.*;
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.http.MediaType;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
+import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 import java.util.Collections;
 import java.util.Map;
 
 @Component
-public class JwtAuthFilter extends GenericFilter {
+public class JwtAuthFilter extends OncePerRequestFilter {
 
     private final JwtService jwtService;
 
@@ -25,12 +27,10 @@ public class JwtAuthFilter extends GenericFilter {
     }
 
     @Override
-    public void doFilter(ServletRequest request,
-                         ServletResponse response,
-                         FilterChain chain)
+    protected void doFilterInternal(HttpServletRequest httpReq,
+                                    HttpServletResponse response,
+                                    FilterChain chain)
             throws IOException, ServletException {
-
-        HttpServletRequest httpReq = (HttpServletRequest) request;
 
         String authHeader = httpReq.getHeader("Authorization");
 
@@ -49,13 +49,13 @@ public class JwtAuthFilter extends GenericFilter {
                 SecurityContextHolder.getContext().setAuthentication(authentication);
             } catch (RuntimeException e) {
                 boolean expired = e.getMessage() != null && e.getMessage().contains("expired");
-                writeUnauthorized((HttpServletResponse) response,
+                writeUnauthorized(response,
                         expired ? "ER_TOKEN_EXPIRED" : "ER_INVALID_TOKEN",
                         e.getMessage());
                 return;
             }
         }
-        chain.doFilter(request, response);
+        chain.doFilter(httpReq, response);
     }
 
     private static final ObjectMapper MAPPER = new ObjectMapper();

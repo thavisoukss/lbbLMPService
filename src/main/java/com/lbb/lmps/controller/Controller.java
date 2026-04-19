@@ -4,6 +4,7 @@ import com.lbb.lmps.dto.*;
 import com.lbb.lmps.service.InquiryOutService;
 import com.lbb.lmps.service.MemberListService;
 import com.lbb.lmps.service.TransferOutService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -71,7 +72,7 @@ public class Controller {
     @PostMapping("/transfer-out-account-quotation-verify")
     public ResponseEntity<TransferOutQrResponse> transferOutAccountQuotationVerify(
             @RequestHeader("Device-ID") String deviceId,
-            @RequestBody TransferOutAccountRequest request) throws Exception {
+            @Valid @RequestBody TransferOutAccountRequest request) throws Exception {
         log.info(">>> START transferOutAccountQuotationVerify >>>");
         log.info("> request body: {}", request);
         long start = System.currentTimeMillis();
@@ -86,7 +87,7 @@ public class Controller {
     @PostMapping("/transfer-out-qr-quotation-verify")
     public ResponseEntity<TransferOutQrResponse> transferOutQrQuotationVerify(
             @RequestHeader("Device-ID") String deviceId,
-            @RequestBody TransferOutQrRequest request) throws Exception {
+            @Valid @RequestBody TransferOutQrRequest request) throws Exception {
         log.info(">>> START transferOutQrQuotationVerify >>>");
         log.info("> request body: {}", request);
         long start = System.currentTimeMillis();

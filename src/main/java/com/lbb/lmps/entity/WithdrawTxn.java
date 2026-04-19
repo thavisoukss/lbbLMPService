@@ -1,12 +1,15 @@
 package com.lbb.lmps.entity;
 
 import jakarta.persistence.*;
-import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.Objects;
 
-@Data
+@Getter
+@Setter
 @Entity
 @Table(name = "WITHDRAW_TXN")
 public class WithdrawTxn {
@@ -81,9 +84,20 @@ public class WithdrawTxn {
     @Column(name = "CREATED_AT", nullable = false)
     private LocalDateTime createdAt;
 
+    @Version
     @Column(name = "VERSION", nullable = false)
-    private Long version;
+    private Long version = 1L;
 
     @Column(name = "FEE_LIST", length = 4000)
     private String feeList;
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof WithdrawTxn w)) return false;
+        return id != null && id.equals(w.id);
+    }
+
+    @Override
+    public int hashCode() { return getClass().hashCode(); }
 }

@@ -164,7 +164,6 @@ public class TransferOutServiceImpl implements TransferOutService {
         withdrawTxn.setFeeAmt(result.getTxnFee() != null ? result.getTxnFee() : txnFee);
         withdrawTxn.setFeeProviderAmt(result.getTxnFee() != null ? result.getTxnFee() : txnFee);
         withdrawTxn.setCoreBankingRef(result.getCbsRefNo());
-        withdrawTxn.setVersion(withdrawTxn.getVersion() + 1);
         withdrawTxnRepository.save(withdrawTxn);
         log.info("[transferOutQr] WITHDRAW_TXN updated id={} status=COMPLETED cbsRefNo={} txnId={}", withdrawTxn.getId(), result.getCbsRefNo(), withdrawTxn.getTransactionId());
 
@@ -288,7 +287,6 @@ public class TransferOutServiceImpl implements TransferOutService {
         withdrawTxn.setFeeAmt(result.getTxnFee() != null ? result.getTxnFee() : txnFee);
         withdrawTxn.setFeeProviderAmt(result.getTxnFee() != null ? result.getTxnFee() : txnFee);
         withdrawTxn.setCoreBankingRef(result.getCbsRefNo());
-        withdrawTxn.setVersion(withdrawTxn.getVersion() + 1);
         withdrawTxnRepository.save(withdrawTxn);
         log.info("[transferOutAccount] WITHDRAW_TXN updated id={} status=COMPLETED cbsRefNo={} txnId={}", withdrawTxn.getId(), result.getCbsRefNo(), withdrawTxn.getTransactionId());
 

@@ -4,11 +4,14 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
-import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.time.LocalDateTime;
+import java.util.Objects;
 
-@Data
+@Getter
+@Setter
 @Entity
 @Table(name = "ACCOUNT")
 public class Account {
@@ -31,4 +34,14 @@ public class Account {
 
     @Column(name = "DELETE_AT")
     private LocalDateTime deleteAt;
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof Account a)) return false;
+        return id != null && id.equals(a.id);
+    }
+
+    @Override
+    public int hashCode() { return getClass().hashCode(); }
 }
