@@ -1,6 +1,8 @@
 package com.lbb.lmps.exception;
 
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.MessageSource;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -11,17 +13,23 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import org.springframework.context.i18n.LocaleContextHolder;
+
 @Slf4j
+@RequiredArgsConstructor
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+
+    private final MessageSource messageSource;
 
     @ExceptionHandler(MissingRequestHeaderException.class)
     public ResponseEntity<?> handleMissingHeader(MissingRequestHeaderException e) {
         log.warn("Missing required header: {}", e.getHeaderName());
+        String msg = messageSource.getMessage("error.MISSING_HEADER.message", new Object[]{e.getHeaderName()}, LocaleContextHolder.getLocale());
         return ResponseEntity.badRequest().body(
                 Map.of("status", "error",
                        "error", Map.of("code", "MISSING_HEADER"),
-                       "message", "Required header '" + e.getHeaderName() + "' is not present")
+                       "message", msg)
         );
     }
 
@@ -71,10 +79,11 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(Exception.class)
     public ResponseEntity<?> handleUnexpected(Exception e) {
         log.error("Unexpected error", e);
+        String msg = messageSource.getMessage("error.INTERNAL_ERROR.message", null, LocaleContextHolder.getLocale());
         return ResponseEntity.internalServerError().body(
                 Map.of("status", "error",
                        "error", Map.of("code", "INTERNAL_ERROR"),
-                       "message", "An unexpected error occurred")
+                       "message", msg)
         );
     }
 }

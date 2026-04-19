@@ -2,6 +2,7 @@ package com.lbb.lmps.service.impl;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.lbb.lmps.dto.*;
+import org.springframework.context.MessageSource;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import com.lbb.lmps.dto.SmartQrInfoRequest.QrData;
 import com.lbb.lmps.entity.WithdrawTxn;
@@ -27,6 +28,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import org.springframework.context.i18n.LocaleContextHolder;
+
 @RequiredArgsConstructor
 @Slf4j
 @Service
@@ -37,6 +40,7 @@ public class TransferOutServiceImpl implements TransferOutService {
 
     private final ApiMSmart apiMSmart;
     private final ObjectMapper mapper;
+    private final MessageSource messageSource;
     private final WithdrawTxnRepository withdrawTxnRepository;
     private final SecurityQuestionRepository securityQuestionRepository;
 
@@ -59,9 +63,9 @@ public class TransferOutServiceImpl implements TransferOutService {
                         SecurityQuestionRepository.CustomerAnswerProjection::getQuestionId,
                         SecurityQuestionRepository.CustomerAnswerProjection::getAnswer));
         log.info("[transferOutQr] verifying security questions customerId={}", customerId);
-        verifySecurityAnswer(storedAnswers, request.getFirstQuestionId(), request.getFirstAnswer(), customerId, "ER_FIRST_ANSWER_INVALID", "Invalid first security question answer", "transferOutQr");
-        verifySecurityAnswer(storedAnswers, request.getSecondQuestionId(), request.getSecondAnswer(), customerId, "ER_SECOND_ANSWER_INVALID", "Invalid second security question answer", "transferOutQr");
-        verifySecurityAnswer(storedAnswers, request.getThirdQuestionId(), request.getThirdAnswer(), customerId, "ER_THIRD_ANSWER_INVALID", "Invalid third security question answer", "transferOutQr");
+        verifySecurityAnswer(storedAnswers, request.getFirstQuestionId(), request.getFirstAnswer(), customerId, "ER_FIRST_ANSWER_INVALID", "transferOutQr");
+        verifySecurityAnswer(storedAnswers, request.getSecondQuestionId(), request.getSecondAnswer(), customerId, "ER_SECOND_ANSWER_INVALID", "transferOutQr");
+        verifySecurityAnswer(storedAnswers, request.getThirdQuestionId(), request.getThirdAnswer(), customerId, "ER_THIRD_ANSWER_INVALID", "transferOutQr");
         log.info("[transferOutQr] security questions verified ok customerId={}", customerId);
 
         // Step 1: fetch WITHDRAW_TXN by x_nonce
@@ -78,7 +82,7 @@ public class TransferOutServiceImpl implements TransferOutService {
 
         if (!"DEBIT_PENDING".equals(withdrawTxn.getStatus())) {
             log.warn("[transferOutQr] unexpected status={} for nonce={}", withdrawTxn.getStatus(), request.getXNonce());
-            throw new BusinessException("4001", "Transaction is not in pending state");
+            throw new BusinessException("4001", messageSource.getMessage("error.4001.message", null, LocaleContextHolder.getLocale()));
         }
 
         log.info("[transferOutQr] loaded WITHDRAW_TXN id={} txnId={}", withdrawTxn.getId(), withdrawTxn.getTransactionId());
@@ -204,9 +208,9 @@ public class TransferOutServiceImpl implements TransferOutService {
                         SecurityQuestionRepository.CustomerAnswerProjection::getQuestionId,
                         SecurityQuestionRepository.CustomerAnswerProjection::getAnswer));
         log.info("[transferOutAccount] verifying security questions customerId={}", customerId);
-        verifySecurityAnswer(storedAnswers, request.getFirstQuestionId(), request.getFirstAnswer(), customerId, "ER_FIRST_ANSWER_INVALID", "Invalid first security question answer", "transferOutAccount");
-        verifySecurityAnswer(storedAnswers, request.getSecondQuestionId(), request.getSecondAnswer(), customerId, "ER_SECOND_ANSWER_INVALID", "Invalid second security question answer", "transferOutAccount");
-        verifySecurityAnswer(storedAnswers, request.getThirdQuestionId(), request.getThirdAnswer(), customerId, "ER_THIRD_ANSWER_INVALID", "Invalid third security question answer", "transferOutAccount");
+        verifySecurityAnswer(storedAnswers, request.getFirstQuestionId(), request.getFirstAnswer(), customerId, "ER_FIRST_ANSWER_INVALID", "transferOutAccount");
+        verifySecurityAnswer(storedAnswers, request.getSecondQuestionId(), request.getSecondAnswer(), customerId, "ER_SECOND_ANSWER_INVALID", "transferOutAccount");
+        verifySecurityAnswer(storedAnswers, request.getThirdQuestionId(), request.getThirdAnswer(), customerId, "ER_THIRD_ANSWER_INVALID", "transferOutAccount");
         log.info("[transferOutAccount] security questions verified ok customerId={}", customerId);
 
         // Load WITHDRAW_TXN by nonce
@@ -223,7 +227,7 @@ public class TransferOutServiceImpl implements TransferOutService {
 
         if (!"DEBIT_PENDING".equals(withdrawTxn.getStatus())) {
             log.warn("[transferOutAccount] unexpected status={} for nonce={}", withdrawTxn.getStatus(), request.getXNonce());
-            throw new BusinessException("4001", "Transaction is not in pending state");
+            throw new BusinessException("4001", messageSource.getMessage("error.4001.message", null, LocaleContextHolder.getLocale()));
         }
 
         log.info("[transferOutAccount] loaded WITHDRAW_TXN id={} txnId={}", withdrawTxn.getId(), withdrawTxn.getTransactionId());
@@ -309,11 +313,12 @@ public class TransferOutServiceImpl implements TransferOutService {
         return response;
     }
 
-    private void verifySecurityAnswer(Map<String, String> stored, String questionId, String answer, String customerId, String errorCode, String errorMessage, String logTag) {
+    private void verifySecurityAnswer(Map<String, String> stored, String questionId, String answer, String customerId, String errorCode, String logTag) {
         String hash = stored.get(questionId);
         if (hash == null || !PASSWORD_ENCODER.matches(answer, hash)) {
             log.warn("[{}] security question failed customerId={} questionId={} errorCode={}", logTag, customerId, questionId, errorCode);
-            throw new BusinessException(errorCode, errorMessage);
+            String msg = messageSource.getMessage("error." + errorCode + ".message", null, LocaleContextHolder.getLocale());
+            throw new BusinessException(errorCode, msg);
         }
     }
 
