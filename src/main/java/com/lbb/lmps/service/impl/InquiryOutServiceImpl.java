@@ -167,7 +167,7 @@ public class InquiryOutServiceImpl implements InquiryOutService {
     }
 
     private void saveInquiryRecord(String customerId, String customerName, String accountNo,
-                                   String nonce, InquiryOutData data, String toType) {
+                                   String nonce, InquiryOutData data, String toType) throws Exception {
         if (data.getTxnId() == null) {
             log.warn("[saveInquiryRecord] txnId is null, skipping WITHDRAW_TXN save toType={}", toType);
             return;
@@ -200,11 +200,7 @@ public class InquiryOutServiceImpl implements InquiryOutService {
         txn.setCreatedAt(LocalDateTime.now());
         txn.setVersion(1L);
         if (data.getFeelist() != null) {
-            try {
-                txn.setFeeList(MAPPER.writeValueAsString(data.getFeelist()));
-            } catch (Exception e) {
-                log.warn("[saveInquiryRecord] failed to serialize feelist txnId={}", data.getTxnId(), e);
-            }
+            txn.setFeeList(MAPPER.writeValueAsString(data.getFeelist()));
         }
 
         withdrawTxnRepository.save(txn);

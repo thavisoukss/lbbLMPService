@@ -74,6 +74,11 @@ public class TransferOutServiceImpl implements TransferOutService {
                     return new ResourceNotFoundException("Invalid or expired transaction nonce");
                 });
 
+        if (!customerId.equals(withdrawTxn.getCustomerId())) {
+            log.warn("[transferOutQr] nonce ownership mismatch caller={} owner={}", customerId, withdrawTxn.getCustomerId());
+            throw new ResourceNotFoundException("Invalid or expired transaction nonce");
+        }
+
         if (!"DEBIT_PENDING".equals(withdrawTxn.getStatus())) {
             log.warn("[transferOutQr] unexpected status={} for nonce={}", withdrawTxn.getStatus(), request.getXNonce());
             throw new BusinessException("4001", "Transaction is not in pending state");
@@ -212,6 +217,11 @@ public class TransferOutServiceImpl implements TransferOutService {
                     log.warn("[transferOutAccount] no WITHDRAW_TXN found for nonce={}", request.getXNonce());
                     return new ResourceNotFoundException("Invalid or expired transaction nonce");
                 });
+
+        if (!customerId.equals(withdrawTxn.getCustomerId())) {
+            log.warn("[transferOutAccount] nonce ownership mismatch caller={} owner={}", customerId, withdrawTxn.getCustomerId());
+            throw new ResourceNotFoundException("Invalid or expired transaction nonce");
+        }
 
         if (!"DEBIT_PENDING".equals(withdrawTxn.getStatus())) {
             log.warn("[transferOutAccount] unexpected status={} for nonce={}", withdrawTxn.getStatus(), request.getXNonce());
