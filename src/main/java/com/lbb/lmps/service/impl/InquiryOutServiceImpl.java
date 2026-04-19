@@ -197,6 +197,13 @@ public class InquiryOutServiceImpl implements InquiryOutService {
         txn.setRemark(toType);
         txn.setCreatedAt(LocalDateTime.now());
         txn.setVersion(1L);
+        if (data.getFeelist() != null) {
+            try {
+                txn.setFeeList(MAPPER.writeValueAsString(data.getFeelist()));
+            } catch (Exception e) {
+                log.warn("[saveInquiryRecord] failed to serialize feelist txnId={}", data.getTxnId(), e);
+            }
+        }
 
         withdrawTxnRepository.save(txn);
         log.info("[saveInquiryRecord] saved WITHDRAW_TXN txnId={} toType={}", data.getTxnId(), toType);
