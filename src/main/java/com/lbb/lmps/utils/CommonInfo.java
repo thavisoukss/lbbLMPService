@@ -3,7 +3,6 @@ package com.lbb.lmps.utils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
-import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -16,8 +15,6 @@ import java.util.concurrent.ThreadLocalRandom;
 @Slf4j
 public class CommonInfo {
 
-
-
     /**
      * gen request date time
      * yyyyMMddHHmmss
@@ -25,12 +22,7 @@ public class CommonInfo {
      * @return 20221231101960
      */
     public String genDt() {
-        String date = null;
-        DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyyMMddHHmmss");
-        LocalDateTime now = LocalDateTime.now();
-        System.out.println(dtf.format(now));
-        date = dtf.format(now).toString();
-        return date.toUpperCase();
+        return DateTimeFormatter.ofPattern("yyyyMMddHHmmss").format(LocalDateTime.now());
     }
 
     /**
@@ -49,12 +41,7 @@ public class CommonInfo {
         // Get the day of the year.
         int dayOfYear = calendar.get(Calendar.DAY_OF_YEAR);
 
-        // format year 2 digits
         SimpleDateFormat yearFmt = new SimpleDateFormat("yy");
-        // day of year (ex: 365)
-        DecimalFormat numDayFmt = new DecimalFormat("000");
-        // random 7 digits
-        DecimalFormat randomFmt = new DecimalFormat("000");
 
         // print year 2 digits
         String year = yearFmt.format(today);
@@ -109,11 +96,4 @@ public class CommonInfo {
         return pre + year + dayOfYearFmt + timeToSecond + String.format("%03d", last3digits) + String.format("%03d", ThreadLocalRandom.current().nextInt(1000));
     }
 
-    public static void main(String[] args) {
-        CommonInfo info = new CommonInfo();
-        for (int i = 0; i < 100; i++){
-            System.out.println(info.genTransactionId(""));
-        }
-
-    }
 }

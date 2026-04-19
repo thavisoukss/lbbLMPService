@@ -168,7 +168,7 @@ public class TransferOutServiceImpl implements TransferOutService {
         withdrawTxnRepository.save(withdrawTxn);
         log.info("[transferOutQr] WITHDRAW_TXN updated id={} status=COMPLETED cbsRefNo={} txnId={}", withdrawTxn.getId(), result.getCbsRefNo(), withdrawTxn.getTransactionId());
 
-        // Step 6: build response
+        // Step 7: build response
         TransferOutQrResponse response = new TransferOutQrResponse();
         response.setTransactionId(result.getTxnId());
         response.setSlipCode(result.getTxnId());
