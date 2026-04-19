@@ -8,6 +8,7 @@ import com.lbb.lmps.entity.WithdrawTxn;
 import com.lbb.lmps.exception.MSmartException;
 import com.lbb.lmps.exception.ResourceNotFoundException;
 import com.lbb.lmps.remote.ApiMSmart;
+import com.lbb.lmps.repository.SecurityQuestionRepository;
 import com.lbb.lmps.repository.WithdrawTxnRepository;
 import com.lbb.lmps.service.TransferOutService;
 import io.jsonwebtoken.Claims;
@@ -21,6 +22,8 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @RequiredArgsConstructor
 @Slf4j
@@ -35,6 +38,7 @@ public class TransferOutServiceImpl implements TransferOutService {
 
     private final ApiMSmart apiMSmart;
     private final WithdrawTxnRepository withdrawTxnRepository;
+    private final SecurityQuestionRepository securityQuestionRepository;
 
     @Override
     @Transactional
@@ -47,6 +51,16 @@ public class TransferOutServiceImpl implements TransferOutService {
         String customerId = (String) claims.get("user-id");
         String mobileNo = (String) claims.get("user-phone");
         log.info("[transferOutQr] userId={} customerId={}", userId, customerId);
+
+        // Security question verification
+        Map<String, String> storedAnswers = securityQuestionRepository.findAnswersByCustomerId(customerId)
+                .stream()
+                .collect(Collectors.toMap(
+                        SecurityQuestionRepository.CustomerAnswerProjection::getQuestionId,
+                        SecurityQuestionRepository.CustomerAnswerProjection::getAnswer));
+        verifySecurityAnswer(storedAnswers, request.getFirstQuestionId(), request.getFirstAnswer(), customerId);
+        verifySecurityAnswer(storedAnswers, request.getSecondQuestionId(), request.getSecondAnswer(), customerId);
+        verifySecurityAnswer(storedAnswers, request.getThirdQuestionId(), request.getThirdAnswer(), customerId);
 
         // Step 1: fetch WITHDRAW_TXN by x_nonce
         WithdrawTxn withdrawTxn = withdrawTxnRepository.findByNonce(request.getXNonce())
@@ -87,33 +101,11 @@ public class TransferOutServiceImpl implements TransferOutService {
         String memberId = qrInfoResponse.getData().getMemberId();
         log.info("[transferOutQr] qrInfo memberId={}", memberId);
 
-        // Step 3: call inquiry-out with stored txnId + resolved memberId — retrieves fee list
-        SmartInquiryDataRequest inqData = new SmartInquiryDataRequest();
-        inqData.setTxnId(withdrawTxn.getTransactionId());
-        inqData.setFromuser(userId);
-        inqData.setFromaccount(withdrawTxn.getDrAccountNo());
-        inqData.setFromCif(withdrawTxn.getDrCif());
-        inqData.setToType("QR");
-        inqData.setToaccount(request.getQrString());
-        inqData.setTomember(memberId);
-
-        SmartInquiryOutRequest inqRequest = new SmartInquiryOutRequest();
-        inqRequest.setClientInfo(clientInfo);
-        inqRequest.setSecurityContext(mobileCtx);
-        inqRequest.setData(inqData);
-
-        String rawInquiry = apiMSmart.callInquiryOut(inqRequest);
-        SmartInquiryOutResponse inqResponse = MAPPER.readValue(rawInquiry, SmartInquiryOutResponse.class);
-        if (!"0000".equals(inqResponse.getResponseCode())) {
-            log.warn("[transferOutQr] m-smart inquiry error | code={} msg={}", inqResponse.getResponseCode(), inqResponse.getResponseMessage());
-            throw new MSmartException(inqResponse.getResponseCode(), inqResponse.getResponseMessage());
-        }
-
-        InquiryOutData inqResult = inqResponse.getData();
-        log.info("[transferOutQr] inquiry txnId={} toCustName={}", inqResult.getTxnId(), inqResult.getAccountname());
+        // Step 3: load fee list from stored WITHDRAW_TXN snapshot
+        FeeList feeList = MAPPER.readValue(withdrawTxn.getFeeList(), FeeList.class);
 
         // Step 4: calculate fee
-        BigDecimal txnFee = calculateFee(inqResult.getFeelist(), request.getAmount(), withdrawTxn.getCurrencyCode());
+        BigDecimal txnFee = calculateFee(feeList, request.getAmount(), withdrawTxn.getCurrencyCode());
         log.info("[transferOutQr] txnFee={} amount={} ccy={}", txnFee, request.getAmount(), withdrawTxn.getCurrencyCode());
 
         // Step 5: execute transfer-out
@@ -180,6 +172,14 @@ public class TransferOutServiceImpl implements TransferOutService {
 
         log.info("[transferOutQr] txnId={} duration_ms={}", result.getTxnId(), System.currentTimeMillis() - start);
         return response;
+    }
+
+    private void verifySecurityAnswer(Map<String, String> stored, String questionId, String answer, String customerId) {
+        String expected = stored.get(questionId);
+        if (expected == null || !expected.equalsIgnoreCase(answer)) {
+            log.warn("[transferOutQr] security question failed customerId={} questionId={}", customerId, questionId);
+            throw new MSmartException("4002", "Security question answer is incorrect");
+        }
     }
 
     private BigDecimal calculateFee(FeeList feeList, BigDecimal amount, String ccy) {

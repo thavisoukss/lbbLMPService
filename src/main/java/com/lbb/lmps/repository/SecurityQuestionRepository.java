@@ -22,4 +22,16 @@ public interface SecurityQuestionRepository extends JpaRepository<SecurityQuesti
         String getId();
         String getDescription();
     }
+
+    @Query(nativeQuery = true, value =
+            "SELECT csq.SECURITY_QUESTIONS_ID as questionId, csq.ANSWER as answer " +
+            "FROM CUSTOMER_SECURITY_QUESTIONS csq " +
+            "WHERE csq.CUSTOMER_ID = :customerId " +
+            "AND csq.DELETE_AT IS NULL")
+    List<CustomerAnswerProjection> findAnswersByCustomerId(@Param("customerId") String customerId);
+
+    interface CustomerAnswerProjection {
+        String getQuestionId();
+        String getAnswer();
+    }
 }
