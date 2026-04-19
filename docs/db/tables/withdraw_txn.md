@@ -43,6 +43,7 @@ Records every withdraw (transfer-out) transaction initiated by a customer, inclu
 | 35 | VERSION | NUMBER | 22 | NOT NULL | `1` | Optimistic locking version (incremented by trigger `TR_WITHDRAW_TXN_VERSION`) |
 | 36 | DELETE_AT | TIMESTAMP(6) | | NULL | | Soft-delete timestamp |
 | 37 | REMARK | VARCHAR2 | 100 | NULL | | Free-text remark |
+| 38 | FEE_LIST | VARCHAR2 | 4000 | NULL | | Fee schedule JSON snapshot at time of transaction (keyed by currency code) |
 
 ## STATUS Values
 

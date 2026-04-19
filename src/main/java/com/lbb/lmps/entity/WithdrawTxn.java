@@ -83,4 +83,7 @@ public class WithdrawTxn {
 
     @Column(name = "VERSION", nullable = false)
     private Long version;
+
+    @Column(name = "FEE_LIST", length = 4000)
+    private String feeList;
 }

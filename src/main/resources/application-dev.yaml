@@ -20,7 +20,6 @@ external:
     m-smart:
       url: http://172.16.4.18:7001
 
-
 management:
   tracing:
     sampling:
