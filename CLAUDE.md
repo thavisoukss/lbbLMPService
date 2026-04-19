@@ -61,6 +61,42 @@ log.info("<<< END logon request <<<");
 
 ---
 
+## Service Logging Pattern
+
+**What**: Every service method must log key events throughout its execution flow to support operations team debugging and monitoring.
+
+**Why**: Controllers capture entry/exit. Services hold the business logic where failures actually occur — security checks, external calls, DB writes. Without service-level key-event logs, ops cannot pinpoint which step failed or how long each step took.
+
+**Required log points** (log every one, in order):
+
+| Event | Level | What to include |
+|-------|-------|----------------|
+| Security verification start | `info` | `customerId` |
+| Security verification pass | `info` | `customerId` |
+| WITHDRAW_TXN loaded | `info` | `id`, `txnId` |
+| Before each external API call | `info` | key request fields (e.g. `txnId`, `amount`, `ccy`) |
+| External API success | `info` | key response fields (e.g. `cbsRefNo`, `txnId`) |
+| External API failure | `warn` | `code`, `msg` |
+| DB record updated | `info` | `id`, new status, key reference fields |
+| Method completed | `info` | `txnId`, key amounts, `duration_ms` |
+
+**Example — transfer service method:**
+```java
+log.info("[transferOutAccount] verifying security questions customerId={}", customerId);
+// ... verify ...
+log.info("[transferOutAccount] security questions verified ok customerId={}", customerId);
+log.info("[transferOutAccount] loaded WITHDRAW_TXN id={} txnId={}", withdrawTxn.getId(), withdrawTxn.getTransactionId());
+log.info("[transferOutAccount] calling m-smart transfer-out txnId={} amount={} fee={} ccy={}", ...);
+// ... call ...
+log.info("[transferOutAccount] m-smart transfer-out success cbsRefNo={} txnId={}", ...);
+log.info("[transferOutAccount] WITHDRAW_TXN updated id={} status=COMPLETED cbsRefNo={} txnId={}", ...);
+log.info("[transferOutAccount] completed txnId={} totalAmount={} feeAmt={} cbsRefNo={} duration_ms={}", ...);
+```
+
+**Tag format**: prefix every log line with `[methodName]` so grep can isolate a single flow across interleaved threads.
+
+---
+
 ## Coding Standards
 
 ### No Temporary Fixes
