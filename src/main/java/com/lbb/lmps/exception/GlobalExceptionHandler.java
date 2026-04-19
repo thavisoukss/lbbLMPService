@@ -42,4 +42,14 @@ public class GlobalExceptionHandler {
                        "message", e.getMessage())
         );
     }
+
+    @ExceptionHandler(BusinessException.class)
+    public ResponseEntity<?> handleBusiness(BusinessException e) {
+        log.warn("business error: code={} message={}", e.getCode(), e.getMessage());
+        return ResponseEntity.ok(
+                Map.of("status", "error",
+                       "error", Map.of("code", e.getCode()),
+                       "message", e.getMessage())
+        );
+    }
 }

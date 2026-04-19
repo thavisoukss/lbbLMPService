@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import com.lbb.lmps.dto.*;
 import com.lbb.lmps.dto.SmartQrInfoRequest.QrData;
 import com.lbb.lmps.entity.WithdrawTxn;
+import com.lbb.lmps.exception.BusinessException;
 import com.lbb.lmps.exception.MSmartException;
 import com.lbb.lmps.exception.ResourceNotFoundException;
 import com.lbb.lmps.remote.ApiMSmart;
@@ -71,7 +72,7 @@ public class TransferOutServiceImpl implements TransferOutService {
 
         if (!"DEBIT_PENDING".equals(withdrawTxn.getStatus())) {
             log.warn("[transferOutQr] unexpected status={} for nonce={}", withdrawTxn.getStatus(), request.getXNonce());
-            throw new MSmartException("4001", "Transaction is not in pending state");
+            throw new BusinessException("4001", "Transaction is not in pending state");
         }
 
         log.info("[transferOutQr] loaded WITHDRAW_TXN id={} txnId={}", withdrawTxn.getId(), withdrawTxn.getTransactionId());
@@ -178,7 +179,7 @@ public class TransferOutServiceImpl implements TransferOutService {
         String expected = stored.get(questionId);
         if (expected == null || !expected.equalsIgnoreCase(answer)) {
             log.warn("[transferOutQr] security question failed customerId={} questionId={}", customerId, questionId);
-            throw new MSmartException("4002", "Security question answer is incorrect");
+            throw new BusinessException("4002", "Security question answer is incorrect");
         }
     }
 
