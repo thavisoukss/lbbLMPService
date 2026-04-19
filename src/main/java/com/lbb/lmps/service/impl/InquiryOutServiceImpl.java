@@ -194,7 +194,9 @@ public class InquiryOutServiceImpl implements InquiryOutService {
         txn.setCurrencyCode(ccy);
         txn.setFeeCurrencyCode(ccy);
         txn.setFeeProviderCurrencyCode(ccy);
-        txn.setRemark(toType);
+        // For ACCOUNT transfers: REMARK stores the recipient member code (needed at transfer time).
+        // For QR transfers: REMARK stores "QR" as a type marker.
+        txn.setRemark("ACCOUNT".equals(toType) ? data.getTomember() : toType);
         txn.setCreatedAt(LocalDateTime.now());
         txn.setVersion(1L);
         if (data.getFeelist() != null) {

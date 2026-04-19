@@ -182,6 +182,124 @@ public class TransferOutServiceImpl implements TransferOutService {
         return response;
     }
 
+    @Override
+    @Transactional
+    public TransferOutQrResponse transferOutAccount(TransferOutAccountRequest request, String deviceId) throws Exception {
+        log.info("[transferOutAccount] deviceId={} amount={} nonce={}", deviceId, request.getAmount(), request.getXNonce());
+        long start = System.currentTimeMillis();
+
+        Claims claims = (Claims) SecurityContextHolder.getContext().getAuthentication().getDetails();
+        String userId = claims.getSubject();
+        String customerId = (String) claims.get("user-id");
+        String mobileNo = (String) claims.get("user-phone");
+        log.info("[transferOutAccount] userId={} customerId={}", userId, customerId);
+
+        // Security question verification
+        Map<String, String> storedAnswers = securityQuestionRepository.findAnswersByCustomerId(customerId)
+                .stream()
+                .collect(Collectors.toMap(
+                        SecurityQuestionRepository.CustomerAnswerProjection::getQuestionId,
+                        SecurityQuestionRepository.CustomerAnswerProjection::getAnswer));
+        log.info("[transferOutAccount] verifying security questions customerId={}", customerId);
+        verifySecurityAnswer(storedAnswers, request.getFirstQuestionId(), request.getFirstAnswer(), customerId, "ER_FIRST_ANSWER_INVALID", "Invalid first security question answer");
+        verifySecurityAnswer(storedAnswers, request.getSecondQuestionId(), request.getSecondAnswer(), customerId, "ER_SECOND_ANSWER_INVALID", "Invalid second security question answer");
+        verifySecurityAnswer(storedAnswers, request.getThirdQuestionId(), request.getThirdAnswer(), customerId, "ER_THIRD_ANSWER_INVALID", "Invalid third security question answer");
+        log.info("[transferOutAccount] security questions verified ok customerId={}", customerId);
+
+        // Load WITHDRAW_TXN by nonce
+        WithdrawTxn withdrawTxn = withdrawTxnRepository.findByNonce(request.getXNonce())
+                .orElseThrow(() -> {
+                    log.warn("[transferOutAccount] no WITHDRAW_TXN found for nonce={}", request.getXNonce());
+                    return new ResourceNotFoundException("Invalid or expired transaction nonce");
+                });
+
+        if (!"DEBIT_PENDING".equals(withdrawTxn.getStatus())) {
+            log.warn("[transferOutAccount] unexpected status={} for nonce={}", withdrawTxn.getStatus(), request.getXNonce());
+            throw new BusinessException("4001", "Transaction is not in pending state");
+        }
+
+        log.info("[transferOutAccount] loaded WITHDRAW_TXN id={} txnId={}", withdrawTxn.getId(), withdrawTxn.getTransactionId());
+
+        // toMember was stored in REMARK at inquiry time
+        String toMember = withdrawTxn.getRemark();
+
+        // Calculate fee from stored snapshot
+        FeeList feeList = MAPPER.readValue(withdrawTxn.getFeeList(), FeeList.class);
+        BigDecimal txnFee = calculateFee(feeList, request.getAmount(), withdrawTxn.getCurrencyCode());
+        log.info("[transferOutAccount] txnFee={} amount={} ccy={}", txnFee, request.getAmount(), withdrawTxn.getCurrencyCode());
+
+        // Execute transfer-out
+        ClientInfo clientInfo = new ClientInfo();
+        clientInfo.setDeviceId(deviceId);
+        clientInfo.setMobileNo(mobileNo);
+        clientInfo.setUserId(userId);
+
+        SecurityContext msCtx = new SecurityContext();
+        msCtx.setChannel("MSMART");
+
+        SmartTransferOutData transferData = new SmartTransferOutData();
+        transferData.setTxnId(withdrawTxn.getTransactionId());
+        transferData.setCbsRefNo(null);
+        transferData.setTxnType("LMPOTA");
+        transferData.setTxnAmount(request.getAmount());
+        transferData.setTxnFee(txnFee);
+        transferData.setTxnCcy(withdrawTxn.getCurrencyCode());
+        transferData.setPurpose(request.getPurpose());
+        transferData.setFromUserId(userId);
+        transferData.setFromCustName(withdrawTxn.getDrAccountName());
+        transferData.setFromAcctId(withdrawTxn.getDrAccountNo());
+        transferData.setFromCif(withdrawTxn.getDrCif());
+        transferData.setToCustName(withdrawTxn.getCrAccountName());
+        transferData.setToAcctId(withdrawTxn.getCrAccountNo());
+        transferData.setToCif(null);
+        transferData.setToType("ACCOUNT");
+        transferData.setToMemberId(toMember);
+
+        SmartTransferOutRequest transferRequest = new SmartTransferOutRequest();
+        transferRequest.setRequestId(null);
+        transferRequest.setClientInfo(clientInfo);
+        transferRequest.setSecurityContext(msCtx);
+        transferRequest.setData(transferData);
+
+        log.info("[transferOutAccount] calling m-smart transfer-out txnId={} amount={} fee={} ccy={} toMember={}", withdrawTxn.getTransactionId(), request.getAmount(), txnFee, withdrawTxn.getCurrencyCode(), toMember);
+        String rawTransfer = apiMSmart.callTransferOut(transferRequest);
+        SmartTransferOutResponse transferResponse = MAPPER.readValue(rawTransfer, SmartTransferOutResponse.class);
+        if (!"0000".equals(transferResponse.getResponseCode())) {
+            log.warn("[transferOutAccount] m-smart transfer error | code={} msg={}", transferResponse.getResponseCode(), transferResponse.getResponseMessage());
+            throw new MSmartException(transferResponse.getResponseCode(), transferResponse.getResponseMessage());
+        }
+
+        SmartTransferOutData result = transferResponse.getData();
+        log.info("[transferOutAccount] m-smart transfer-out success cbsRefNo={} txnId={}", result.getCbsRefNo(), result.getTxnId());
+
+        // Update WITHDRAW_TXN
+        withdrawTxn.setStatus("COMPLETED");
+        withdrawTxn.setAmount(result.getTxnAmount() != null ? result.getTxnAmount() : request.getAmount());
+        withdrawTxn.setFeeAmt(result.getTxnFee() != null ? result.getTxnFee() : txnFee);
+        withdrawTxn.setFeeProviderAmt(result.getTxnFee() != null ? result.getTxnFee() : txnFee);
+        withdrawTxn.setCoreBankingRef(result.getCbsRefNo());
+        withdrawTxn.setVersion(withdrawTxn.getVersion() + 1);
+        withdrawTxnRepository.save(withdrawTxn);
+        log.info("[transferOutAccount] WITHDRAW_TXN updated id={} status=COMPLETED cbsRefNo={} txnId={}", withdrawTxn.getId(), result.getCbsRefNo(), withdrawTxn.getTransactionId());
+
+        TransferOutQrResponse response = new TransferOutQrResponse();
+        response.setTransactionId(result.getTxnId());
+        response.setSlipCode(result.getTxnId());
+        response.setTranDate(LocalDateTime.now().format(TRAN_DATE_FMT));
+        response.setTotalAmount(result.getTxnAmount());
+        response.setCurrencyCode(result.getTxnCcy());
+        response.setFeeAmt(result.getTxnFee());
+        response.setDrAccountNo(result.getFromAcctId());
+        response.setDrAccountName(result.getFromCustName());
+        response.setCrAccountNo(result.getToAcctId());
+        response.setCrAccountName(result.getToCustName());
+        response.setProviderRef(result.getCbsRefNo());
+        response.setPurpose(result.getPurpose());
+
+        log.info("[transferOutAccount] completed txnId={} totalAmount={} feeAmt={} cbsRefNo={} duration_ms={}", result.getTxnId(), response.getTotalAmount(), response.getFeeAmt(), response.getProviderRef(), System.currentTimeMillis() - start);
+        return response;
+    }
+
     private void verifySecurityAnswer(Map<String, String> stored, String questionId, String answer, String customerId, String errorCode, String errorMessage) {
         String hash = stored.get(questionId);
         if (hash == null || !PASSWORD_ENCODER.matches(answer, hash)) {

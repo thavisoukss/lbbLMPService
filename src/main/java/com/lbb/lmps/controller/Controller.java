@@ -68,6 +68,21 @@ public class Controller {
         return ResponseEntity.ok(finalResponse);
     }
 
+    @PostMapping("/transfer-out-account-quotation-verify")
+    public ResponseEntity<TransferOutQrResponse> transferOutAccountQuotationVerify(
+            @RequestHeader("Device-ID") String deviceId,
+            @RequestBody TransferOutAccountRequest request) throws Exception {
+        log.info(">>> START transferOutAccountQuotationVerify >>>");
+        log.info("> request body: {}", request);
+        long start = System.currentTimeMillis();
+
+        TransferOutQrResponse finalResponse = transferOutService.transferOutAccount(request, deviceId);
+
+        log.info("< Final response: {} | duration_ms={}", finalResponse, System.currentTimeMillis() - start);
+        log.info("<<< END transferOutAccountQuotationVerify request <<<");
+        return ResponseEntity.ok(finalResponse);
+    }
+
     @PostMapping("/transfer-out-qr-quotation-verify")
     public ResponseEntity<TransferOutQrResponse> transferOutQrQuotationVerify(
             @RequestHeader("Device-ID") String deviceId,
