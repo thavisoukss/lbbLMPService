@@ -23,6 +23,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -328,12 +329,11 @@ public class TransferOutServiceImpl implements TransferOutService {
         if (tiers == null || tiers.isEmpty()) {
             return BigDecimal.ZERO;
         }
-        BigDecimal fee = BigDecimal.ZERO;
-        for (FeeEntry tier : tiers) {
-            if (amount.compareTo(tier.getFrom()) >= 0) {
-                fee = tier.getFeeamount();
-            }
-        }
-        return fee;
+        return tiers.stream()
+                .filter(t -> t.getFrom() != null && t.getFeeamount() != null)
+                .filter(t -> amount.compareTo(t.getFrom()) >= 0)
+                .max(Comparator.comparing(FeeEntry::getFrom))
+                .map(FeeEntry::getFeeamount)
+                .orElse(BigDecimal.ZERO);
     }
 }

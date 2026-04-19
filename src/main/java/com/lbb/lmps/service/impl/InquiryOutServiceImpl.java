@@ -19,6 +19,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -36,6 +37,8 @@ public class InquiryOutServiceImpl implements InquiryOutService {
 
     // 25 = PAYMENT_CHANNEL.ID for 'Lao QR' — used for all outward QR/account transfers
     private static final long PAYMENT_CHANNEL_ID = 25L;
+    // Outward transfers always debit from the customer's LAK settlement account
+    private static final String DR_ACCOUNT_CURRENCY = "LAK";
 
     private final ApiMSmart apiMSmart;
     private final AccountRepository accountRepository;
@@ -45,6 +48,7 @@ public class InquiryOutServiceImpl implements InquiryOutService {
     private final CommonInfo commonInfo;
 
     @Override
+    @Transactional
     public InquiryOutResponse inquiryOut(InquiryOutRequest request, String deviceId) throws Exception {
         log.info("[inquiryOut] deviceId={} toAccount={} toMember={}", deviceId, request.getToAccount(), request.getToMember());
         long start = System.currentTimeMillis();
@@ -94,6 +98,7 @@ public class InquiryOutServiceImpl implements InquiryOutService {
     }
 
     @Override
+    @Transactional
     public InquiryOutResponse inquiryOutQr(String qr, String deviceId) throws Exception {
         log.info("[inquiryOutQr] deviceId={} qr={}", deviceId, qr);
         long start = System.currentTimeMillis();
@@ -215,7 +220,7 @@ public class InquiryOutServiceImpl implements InquiryOutService {
     ) {}
 
     private CustomerContext loadCustomerContext(String customerId, String deviceId, String userId, String mobileNo, String logTag) {
-        String accountNo = accountRepository.findAccountNoByCustomerId(customerId)
+        String accountNo = accountRepository.findAccountNoByCustomerId(customerId, DR_ACCOUNT_CURRENCY)
                 .orElseThrow(() -> {
                     log.warn("[{}] no account found for customerId={}", logTag, customerId);
                     return new ResourceNotFoundException("No account found for customer: " + customerId);

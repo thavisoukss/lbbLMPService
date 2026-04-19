@@ -9,6 +9,6 @@ import java.util.Optional;
 
 public interface AccountRepository extends JpaRepository<Account, Long> {
 
-    @Query("SELECT a.accountNo FROM Account a WHERE a.customerId = :customerId AND a.accountCurrency = 'LAK' AND a.status = 'ACTIVE' AND a.deleteAt IS NULL")
-    Optional<String> findAccountNoByCustomerId(@Param("customerId") String customerId);
+    @Query("SELECT a.accountNo FROM Account a WHERE a.customerId = :customerId AND a.accountCurrency = :currencyCode AND a.status = 'ACTIVE' AND a.deleteAt IS NULL")
+    Optional<String> findAccountNoByCustomerId(@Param("customerId") String customerId, @Param("currencyCode") String currencyCode);
 }

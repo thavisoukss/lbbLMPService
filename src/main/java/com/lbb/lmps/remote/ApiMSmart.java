@@ -84,7 +84,6 @@ public class ApiMSmart {
     }
 
     private String post(String uriPath, String body) throws Exception {
-        log.info(":: http request body: {}", body);
         return restClient
                 .post()
                 .uri(uriPath)
