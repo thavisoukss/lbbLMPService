@@ -3,6 +3,7 @@ package com.lbb.lmps.service.impl;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.lbb.lmps.dto.*;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import com.lbb.lmps.dto.SmartQrInfoRequest.QrData;
 import com.lbb.lmps.entity.WithdrawTxn;
 import com.lbb.lmps.exception.BusinessException;
@@ -36,6 +37,7 @@ public class TransferOutServiceImpl implements TransferOutService {
             .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
 
     private static final DateTimeFormatter TRAN_DATE_FMT = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+    private static final BCryptPasswordEncoder PASSWORD_ENCODER = new BCryptPasswordEncoder(12);
 
     private final ApiMSmart apiMSmart;
     private final WithdrawTxnRepository withdrawTxnRepository;
@@ -59,9 +61,11 @@ public class TransferOutServiceImpl implements TransferOutService {
                 .collect(Collectors.toMap(
                         SecurityQuestionRepository.CustomerAnswerProjection::getQuestionId,
                         SecurityQuestionRepository.CustomerAnswerProjection::getAnswer));
-        verifySecurityAnswer(storedAnswers, request.getFirstQuestionId(), request.getFirstAnswer(), customerId);
-        verifySecurityAnswer(storedAnswers, request.getSecondQuestionId(), request.getSecondAnswer(), customerId);
-        verifySecurityAnswer(storedAnswers, request.getThirdQuestionId(), request.getThirdAnswer(), customerId);
+        log.info("[transferOutQr] verifying security questions customerId={}", customerId);
+        verifySecurityAnswer(storedAnswers, request.getFirstQuestionId(), request.getFirstAnswer(), customerId, "ER_FIRST_ANSWER_INVALID", "Invalid first security question answer");
+        verifySecurityAnswer(storedAnswers, request.getSecondQuestionId(), request.getSecondAnswer(), customerId, "ER_SECOND_ANSWER_INVALID", "Invalid second security question answer");
+        verifySecurityAnswer(storedAnswers, request.getThirdQuestionId(), request.getThirdAnswer(), customerId, "ER_THIRD_ANSWER_INVALID", "Invalid third security question answer");
+        log.info("[transferOutQr] security questions verified ok customerId={}", customerId);
 
         // Step 1: fetch WITHDRAW_TXN by x_nonce
         WithdrawTxn withdrawTxn = withdrawTxnRepository.findByNonce(request.getXNonce())
@@ -93,6 +97,7 @@ public class TransferOutServiceImpl implements TransferOutService {
         qrInfoRequest.setSecurityContext(mobileCtx);
         qrInfoRequest.setData(qrData);
 
+        log.info("[transferOutQr] calling m-smart QR info qrString={}", request.getQrString());
         String rawQrInfo = apiMSmart.callQrInfo(qrInfoRequest);
         SmartQrInfoResponse qrInfoResponse = MAPPER.readValue(rawQrInfo, SmartQrInfoResponse.class);
         if (!"0000".equals(qrInfoResponse.getResponseCode())) {
@@ -137,6 +142,7 @@ public class TransferOutServiceImpl implements TransferOutService {
         transferRequest.setSecurityContext(msCtx);
         transferRequest.setData(transferData);
 
+        log.info("[transferOutQr] calling m-smart transfer-out txnId={} amount={} fee={} ccy={}", withdrawTxn.getTransactionId(), request.getAmount(), txnFee, withdrawTxn.getCurrencyCode());
         String rawTransfer = apiMSmart.callTransferOut(transferRequest);
         SmartTransferOutResponse transferResponse = MAPPER.readValue(rawTransfer, SmartTransferOutResponse.class);
         if (!"0000".equals(transferResponse.getResponseCode())) {
@@ -145,6 +151,7 @@ public class TransferOutServiceImpl implements TransferOutService {
         }
 
         SmartTransferOutData result = transferResponse.getData();
+        log.info("[transferOutQr] m-smart transfer-out success cbsRefNo={} txnId={}", result.getCbsRefNo(), result.getTxnId());
 
         // Step 6: update WITHDRAW_TXN with final result
         withdrawTxn.setStatus("COMPLETED");
@@ -171,15 +178,15 @@ public class TransferOutServiceImpl implements TransferOutService {
         response.setProviderRef(result.getCbsRefNo());
         response.setPurpose(result.getPurpose());
 
-        log.info("[transferOutQr] txnId={} duration_ms={}", result.getTxnId(), System.currentTimeMillis() - start);
+        log.info("[transferOutQr] completed txnId={} totalAmount={} feeAmt={} cbsRefNo={} duration_ms={}", result.getTxnId(), response.getTotalAmount(), response.getFeeAmt(), response.getProviderRef(), System.currentTimeMillis() - start);
         return response;
     }
 
-    private void verifySecurityAnswer(Map<String, String> stored, String questionId, String answer, String customerId) {
-        String expected = stored.get(questionId);
-        if (expected == null || !expected.equalsIgnoreCase(answer)) {
-            log.warn("[transferOutQr] security question failed customerId={} questionId={}", customerId, questionId);
-            throw new BusinessException("4002", "Security question answer is incorrect");
+    private void verifySecurityAnswer(Map<String, String> stored, String questionId, String answer, String customerId, String errorCode, String errorMessage) {
+        String hash = stored.get(questionId);
+        if (hash == null || !PASSWORD_ENCODER.matches(answer, hash)) {
+            log.warn("[transferOutQr] security question failed customerId={} questionId={} errorCode={}", customerId, questionId, errorCode);
+            throw new BusinessException(errorCode, errorMessage);
         }
     }
 
