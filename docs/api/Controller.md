@@ -192,7 +192,7 @@ Inquiry for an outbound cross-bank transfer via QR code — validates recipient 
 
 **Example Request**
 ```
-GET /lmps/api/inquiry-out-qr?qr=xxxxxxxxxxxxxxxxxxxxxxxx
+POST /lmps/api/inquiry-out-qr?qr=xxxxxxxxxxxxxxxxxxxxxxxx
 ```
 
 **No request body.**
