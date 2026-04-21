@@ -270,7 +270,7 @@ POST /lmps/api/inquiry-out-qr?qr=xxxxxxxxxxxxxxxxxxxxxxxx
 
 ---
 
-### POST /transfer-out-qr-quotation-verify
+### POST /{{loc}}:8084/api/lmps/transfer-out-qr-quotation-verify
 Execute an outbound cross-bank transfer via QR code. Verifies security answers and performs the transfer in a single call.
 
 **Headers**
@@ -351,6 +351,96 @@ Execute an outbound cross-bank transfer via QR code. Verifies security answers a
     "code": "ER_INTERNAL_SERVER_ERROR"
   },
   "message": "Failed to transfer via QR"
+}
+```
+
+See [errors.md](errors.md) for the full error response format.
+
+---
+
+### POST /transfer-out-account-quotation-verify
+Execute an outbound cross-bank transfer to a bank account number. Verifies security answers and performs the transfer in a single call.
+
+Prerequisite: a successful `/inquiry-out-account` call that returned `x_nonce`.
+
+**Headers**
+
+| Header | Required | Description |
+|--------|----------|-------------|
+| `Authorization` | Yes | `Bearer <JWT>` |
+| `Content-Type` | Yes | `application/json` |
+| `Device-ID` | Yes | Unique device identifier |
+
+**Request body**
+```json
+{
+  "x_nonce": "6a03b4ac-517c-406e-bd3c-74965b93916f",
+  "to_account": "0100000947725",
+  "amount": 2300,
+  "purpose": "TEST helloworld",
+  "first_question_id": "SQ4",
+  "first_answer": "1234",
+  "second_question_id": "SQ5",
+  "second_answer": "1234",
+  "third_question_id": "SQ6",
+  "third_answer": "1234"
+}
+```
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `x_nonce` | string | Yes | Nonce returned from the `/inquiry-out-account` step |
+| `to_account` | string | Yes | Recipient account number (must match the inquiry) |
+| `amount` | number | Yes | Transfer amount (must be positive) |
+| `purpose` | string | No | Purpose/note for the transfer |
+| `first_question_id` | string | Yes | ID of the first security question |
+| `first_answer` | string | Yes | Answer to the first security question |
+| `second_question_id` | string | Yes | ID of the second security question |
+| `second_answer` | string | Yes | Answer to the second security question |
+| `third_question_id` | string | Yes | ID of the third security question |
+| `third_answer` | string | Yes | Answer to the third security question |
+
+**Response `200 OK`**
+```json
+{
+  "purpose": "TEST helloworld",
+  "transaction_id": "2610967435207789",
+  "slip_code": "2610967435207789",
+  "tran_date": "2026-04-19 18:44:24",
+  "total_amount": 2300,
+  "currency_code": "LAK",
+  "fee_amt": 1000,
+  "dr_account_no": "1200182110002250",
+  "dr_account_name": "PITI-PHANTHASOMBATH",
+  "cr_account_no": "0100000947725",
+  "cr_account_name": "MR ANOUDETH XAYACHACK",
+  "provider_ref": "INT0000060003279"
+}
+```
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `transaction_id` | string | Unique transaction ID (CBS reference) |
+| `slip_code` | string | Slip/receipt code (same as `transaction_id`) |
+| `tran_date` | string | Transaction datetime (`YYYY-MM-DD HH:mm:ss`) |
+| `total_amount` | number | Total amount transferred |
+| `currency_code` | string | Currency of the transaction |
+| `fee_amt` | number | Fee charged for the transaction |
+| `dr_account_no` | string | Sender (debit) account number |
+| `dr_account_name` | string | Sender account name |
+| `cr_account_no` | string | Recipient (credit) account number |
+| `cr_account_name` | string | Recipient account name |
+| `provider_ref` | string | CBS reference number |
+| `purpose` | string | Purpose/note of the transfer |
+
+**Error response**
+```json
+{
+  "status": "error",
+  "error": {
+    "code": "ER_INTERNAL_SERVER_ERROR"
+  },
+  "message": "..."
 }
 ```
 
