@@ -3,9 +3,12 @@ server:
   port: 8084
 spring:
   datasource:
-    url: jdbc:oracle:thin:@//172.16.4.79:1521/cdbmbuat.lbb.local
-    username: mb_uat
-    password: qwertyui
+#    url: jdbc:oracle:thin:@//172.16.4.79:1521/cdbmbuat.lbb.local
+#    username: mb_uat
+#    password: qwertyui
+    url: jdbc:oracle:thin:@//172.16.4.79:1521/LBBMBUAT02.lbb.local
+    username: admin_mbuat
+    password: Admin123##
     driver-class-name: oracle.jdbc.OracleDriver
   jpa:
     database-platform: org.hibernate.dialect.OracleDialect

@@ -2,7 +2,7 @@ spring:
   application:
     name: lbb-lmps
   profiles:
-    active: local
+    active: dev
 
 server:
   servlet:
