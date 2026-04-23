@@ -5,11 +5,14 @@ import com.lbb.lmps.dto.*;
 import com.lbb.lmps.exception.MSmartException;
 import com.lbb.lmps.remote.ApiMSmart;
 import com.lbb.lmps.service.MemberListService;
+import com.lbb.lmps.service.MinioStorageService;
 import io.jsonwebtoken.Claims;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+
+import java.util.List;
 
 @Slf4j
 @Service
@@ -18,6 +21,7 @@ public class MemberListServiceImpl implements MemberListService {
 
     private final ApiMSmart apiMSmart;
     private final ObjectMapper mapper;
+    private final MinioStorageService minioStorageService;
 
     @Override
     public MemberListResponse getMemberList(String deviceId) throws Exception {
@@ -49,8 +53,17 @@ public class MemberListServiceImpl implements MemberListService {
             throw new MSmartException(smartResponse.getResponseCode(), smartResponse.getResponseMessage());
         }
 
+        List<MemberData> data = smartResponse.getData();
+        if (data != null) {
+            for (MemberData member : data) {
+                if (member.getImageUrl() != null && !member.getImageUrl().isBlank()) {
+                    member.setImageUrl(minioStorageService.getFileURL("icon_image", member.getImageUrl()));
+                }
+            }
+        }
+
         MemberListResponse response = new MemberListResponse();
-        response.setData(smartResponse.getData());
+        response.setData(data);
         response.setStatus("success");
 
         log.info("[getMemberList] status={} duration_ms={}", response.getStatus(), System.currentTimeMillis() - start);

@@ -20,6 +20,12 @@ external:
     m-smart:
       url: http://localhost:7001
 
+minio:
+  endpoint: https://s3-uat.laobullionbank.com
+  access-key: admin_iquri
+  secret-key: admin@iquri@2025
+  bucket: lbb-mb-uat
+
 management:
   tracing:
     sampling:
