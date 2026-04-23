@@ -1,47 +1,37 @@
-# Multi-stage build for optimized image size
-# Stage 1: Build Stage (Maven Build)
-FROM --platform=linux/amd64 maven:3.9-eclipse-temurin-17 AS builder
+FROM amazoncorretto:21.0.2-alpine as corretto-jdk
 
-# Set working directory
-WORKDIR /app
+#--- required for strip-debug to work
+RUN apk add --no-cache binutils
 
-# Copy pom.xml and download dependencies
-COPY pom.xml .
-RUN mvn dependency:go-offline -B
+#--- Build small JRE image
+RUN $JAVA_HOME/bin/jlink \
+         --verbose \
+         --add-modules ALL-MODULE-PATH \
+         --strip-debug \
+         --no-man-pages \
+         --no-header-files \
+         --compress=2 \
+         --output /customjre
 
-# Copy source code
-COPY src ./src
+#--- main app image
+FROM alpine:latest
+RUN echo "Asia/Bangkok" > /etc/timezone && date
+ENV JAVA_HOME=/jre
+ENV PATH="${JAVA_HOME}/bin:${PATH}"
 
-# Build application
-RUN mvn clean package -DskipTests
-
-# Runtime stage
-FROM --platform=linux/amd64 eclipse-temurin:17-jre-alpine
-
-# Set working directory
-WORKDIR /app
-# ສ້າງ logs directory ກ່ອນ (ໃນຖານະ root)
-RUN mkdir -p /app/logs
-
-# Create non-root user for security
-#RUN addgroup -S spring && adduser -S spring -G spring
-#USER spring:spring
-
-# ສ້າງ logs directory ແລະໃຫ້ສິດ
-# RUN mkdir -p /app/logs && \
-#     chown -R spring:spring /app/logs && \
-#     chmod -R 755 /app/logs
-#       docker build -t api-gateway:1.0.0 .
-
-# Copy JAR from builder stage
-COPY --from=builder /app/target/*.jar app.jar
-
-# Expose port
-EXPOSE 8080
-
-# Run application
-ENTRYPOINT ["java", "-jar", "app.jar"]
+#--- copy JRE from the base image
+COPY --from=corretto-jdk /customjre $JAVA_HOME
 
 
-#docker build --platform linux/amd64  -t 172.16.4.62:5000/customer/lmps-service-1:1.0.0
-#docker push 172.16.4.62:5000/customer/lmps-service-1:1.0.0
+WORKDIR /usr/apps
+COPY target/*.jar ./
+#COPY AppMain.class ./
+#RUN jar xf *.jar
+#RUN rm -rf *.jar
+RUN mkdir ./config_props
+COPY src/main/resources/* ./config_props
+#COPY config_props/* ./config_props
+ENTRYPOINT ["sh", "-c"]
+#CMD ["exec java -cp . -Dspring.config.location=./config_props/application.properties AppMain"]
+CMD ["exec java -jar lmps-payment.jar --spring.config.location=./config_props/application.yaml"]
+#CMD ["exec java -jar $(ls | grep .jar -m 1)"]

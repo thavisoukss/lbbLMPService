@@ -1,0 +1,38 @@
+version: "3.9"
+
+services:
+  lmps:
+    # The Docker image to run (built by build.sh)
+    image: "172.16.4.62:5000/noh/lmps-payment:dev-be6a35b"
+
+    # Map port 8084 on your machine → port 8084 inside the container
+    ports:
+      - "8084:8084"
+
+    # Environment variables passed into the container
+    environment:
+      SPRING_PROFILES_ACTIVE: "dev"
+      TZ: "Asia/Bangkok"
+
+    deploy:
+      # How many copies of the container to run
+      replicas: 1
+      restart_policy:
+        # Restart the container only when it crashes (non-zero exit).
+        # Does NOT restart when you stop it intentionally (e.g. docker stop).
+        condition: on-failure
+
+    volumes:
+      # Persist log files on the host so they survive container restarts
+      - lmps_payment_logs:/usr/apps/logs
+
+    networks:
+      - lbb_network
+
+volumes:
+  lmps_payment_logs:
+    driver: local
+
+networks:
+  lbb_network:
+    external: true
