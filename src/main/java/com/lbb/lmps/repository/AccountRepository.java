@@ -11,4 +11,7 @@ public interface AccountRepository extends JpaRepository<Account, Long> {
 
     @Query("SELECT a.accountNo FROM Account a WHERE a.customerId = :customerId AND a.accountCurrency = :currencyCode AND a.status = 'ACTIVE' AND a.deleteAt IS NULL")
     Optional<String> findAccountNoByCustomerId(@Param("customerId") String customerId, @Param("currencyCode") String currencyCode);
+
+    @Query("SELECT a FROM Account a WHERE a.customerId = :customerId AND a.accountCurrency = 'LAK' AND a.accountType = 'CURRENT' AND a.status = 'ACTIVE'")
+    Optional<Account> findCurrentLakAccount(@Param("customerId") String customerId);
 }

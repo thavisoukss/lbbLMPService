@@ -1,6 +1,7 @@
 package com.lbb.lmps.controller;
 
 import com.lbb.lmps.dto.*;
+import com.lbb.lmps.service.BuildQrService;
 import com.lbb.lmps.service.InquiryOutService;
 import com.lbb.lmps.service.MemberListService;
 import com.lbb.lmps.service.TransferOutService;
@@ -19,6 +20,7 @@ public class Controller {
     private final MemberListService memberListService;
     private final InquiryOutService inquiryOutService;
     private final TransferOutService transferOutService;
+    private final BuildQrService buildQrService;
 
     @GetMapping("/help-check")
     public String testService() {
@@ -84,6 +86,20 @@ public class Controller {
         return ResponseEntity.ok(finalResponse);
     }
 
+    @PostMapping("/build-static-qr")
+    public ResponseEntity<BuildQrResponse> buildStaticQr(
+            @RequestHeader("Device-ID") String deviceId) throws Exception {
+        log.info(">>> START buildStaticQr >>>");
+        log.info("> Device-ID: {}", deviceId);
+        long start = System.currentTimeMillis();
+
+        BuildQrResponse finalResponse = buildQrService.buildStaticQr(deviceId);
+
+        log.info("< Final response: {} | duration_ms={}", finalResponse, System.currentTimeMillis() - start);
+        log.info("<<< END buildStaticQr request <<<");
+        return ResponseEntity.ok(finalResponse);
+    }
+
     @PostMapping("/transfer-out-qr-quotation-verify")
     public ResponseEntity<TransferOutQrResponse> transferOutQrQuotationVerify(
             @RequestHeader("Device-ID") String deviceId,
@@ -98,4 +114,5 @@ public class Controller {
         log.info("<<< END transferOutQrQuotationVerify request <<<");
         return ResponseEntity.ok(finalResponse);
     }
+
 }

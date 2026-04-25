@@ -23,6 +23,9 @@ public class Account {
     @Column(name = "ACCOUNT_NO")
     private String accountNo;
 
+    @Column(name = "ACCOUNT_NAME")
+    private String accountName;
+
     @Column(name = "CUSTOMER_ID")
     private String customerId;
 
@@ -31,6 +34,9 @@ public class Account {
 
     @Column(name = "ACCOUNT_CURRENCY")
     private String accountCurrency;
+
+    @Column(name = "ACCOUNT_TYPE")
+    private String accountType;
 
     @Column(name = "DELETE_AT")
     private LocalDateTime deleteAt;

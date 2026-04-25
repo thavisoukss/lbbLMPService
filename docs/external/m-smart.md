@@ -15,8 +15,8 @@ All m-smart API responses use `responseCode` to indicate the result:
 | member-list | `/m-smart/lmps/member-list` |
 | inquiry out | `/m-smart/lmps/out/inquiry/register` |
 | transfer out | `/m-smart/lmps/out/transfer` |
-| build QR | `/m-smart/lmps/qr/generate` |
-| QR info | `/m-smart/lmps/qr/info` |
+| build QR | `/m-smart/qr/generate` |
+| QR info | `/m-smart/qr/info` |
 
 ### POST - build QR - `/m-smart/lmps/qr/generate`
 Generates a static QR code string for a given customer account.

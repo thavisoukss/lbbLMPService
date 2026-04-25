@@ -2,6 +2,7 @@ package com.lbb.lmps.remote;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.lbb.lmps.dto.MemberListRequest;
+import com.lbb.lmps.dto.SmartBuildQrRequest;
 import com.lbb.lmps.dto.SmartInquiryOutRequest;
 import com.lbb.lmps.dto.SmartQrInfoRequest;
 import com.lbb.lmps.dto.SmartTransferOutRequest;
@@ -32,6 +33,9 @@ public class ApiMSmart {
 
     @Value("${external.api.m-smart.path-qr-info}")
     private String pathQrInfo;
+
+    @Value("${external.api.m-smart.path-build-qr}")
+    private String pathBuildQr;
 
     @Value("${external.api.m-smart.path-trf-out}")
     private String pathTrfOut;
@@ -72,6 +76,12 @@ public class ApiMSmart {
     public String callQrInfo(SmartQrInfoRequest request) throws Exception {
         String uriPath = pathRoot + pathQrInfo;
         log.info(":: Calling m-smart qr-info at URI: {}", uriPath);
+        return post(uriPath, mapper.writeValueAsString(request));
+    }
+
+    public String callBuildQr(SmartBuildQrRequest request) throws Exception {
+        String uriPath = pathRoot + pathBuildQr;
+        log.info(":: Calling m-smart build-qr at URI: {}", uriPath);
         return post(uriPath, mapper.writeValueAsString(request));
     }
 
