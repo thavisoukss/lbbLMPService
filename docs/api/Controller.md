@@ -445,3 +445,40 @@ Prerequisite: a successful `/inquiry-out-account` call that returned `x_nonce`.
 ```
 
 See [errors.md](errors.md) for the full error response format.
+
+---
+
+### POST /build-static-qr
+Generates a static QR code string for the authenticated user's account. The mobile app uses this QR for receiving PromptPay transfers.
+
+**Headers**
+
+| Header | Required | Description |
+|--------|----------|-------------|
+| `Authorization` | Yes | `Bearer <JWT>` |
+| `Device-ID` | Yes | Unique device identifier |
+| `Accept-Encoding` | No | e.g. `identity` to disable compression |
+
+**No request body.**
+
+**Response `200 OK`**
+```json
+{
+  "data": {
+    "accountName": "PITI-PHANTHASOMBATH",
+    "accountNo": "1200182110002250",
+    "currency": "LAK",
+    "qrString": "qwerty"
+  },
+  "status": "success"
+}
+```
+
+**Response fields — `data`**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `accountName` | string | Account holder name |
+| `accountNo` | string | Account number the QR is linked to |
+| `currency` | string | Account currency (e.g. `LAK`) |
+| `qrString` | string | Raw QR code string to be rendered as a QR image |

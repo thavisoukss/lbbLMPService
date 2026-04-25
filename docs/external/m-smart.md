@@ -18,6 +18,64 @@ All m-smart API responses use `responseCode` to indicate the result:
 | build QR | `/m-smart/lmps/qr/generate` |
 | QR info | `/m-smart/lmps/qr/info` |
 
+### POST - build QR - `/m-smart/lmps/qr/generate`
+Generates a static QR code string for a given customer account.
+
+**Request body**
+```json
+{
+  "clientInfo": {
+    "deviceId": "device1234567",
+    "mobileNo": "2055555999",
+    "userId": "user001"
+  },
+  "securityContext": {
+    "channel": "MOBILE"
+  },
+  "data": {
+    "qrFor": "A",
+    "custAccountCcy": "418",
+    "custAccount": "0100000947725",
+    "additionalCustomerDataRequest": "TXN20251030143000123456|SLIP2025103014300001|5.5|850000.00|http://callbackurl"
+  }
+}
+```
+
+**Request fields — `data`**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `qrFor` | string | QR purpose code — `"A"` for account-based static QR |
+| `custAccountCcy` | string | ISO 4217 numeric currency code (e.g. `"418"` = LAK) |
+| `custAccount` | string | Customer account number to generate QR for |
+| `additionalCustomerDataRequest` | string | Pipe-delimited extra data: `txnId\|slipCode\|feePercent\|amount\|callbackUrl` |
+
+**Response `200 OK`**
+```json
+{
+  "responseCode": "0000",
+  "responseMessage": "Transaction completed successfully",
+  "responseStatus": "SUCCESS",
+  "responseTimestamp": "2025-10-20T06:57:46.193919500Z",
+  "clientInfo": {
+    "deviceId": "device1234567",
+    "mobileNo": "2055555999",
+    "userId": "user001"
+  },
+  "data": {
+    "qrString": "00020101021138620016A00526628466257701087014041802030010319LBB-0100000947725-A5204511453034185802LA6304bc7d"
+  }
+}
+```
+
+**Response fields — `data`**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `qrString` | string | Raw QR code string to be rendered as a QR image |
+
+---
+
 ### POST - QR info - `/m-smart/lmps/qr/info`
 
 **Request body**
