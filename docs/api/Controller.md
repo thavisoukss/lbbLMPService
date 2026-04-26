@@ -1,6 +1,6 @@
 # LMPS Service — API Reference
 
-**Base URL:** `http://<host>:8084/api/lmps`  
+**Base URL:** `http://<host>:8084/api`  
 **Authentication:** All endpoints require `Authorization: Bearer <JWT>` (RS256) except `/auth/**`
 
 ---
@@ -30,7 +30,7 @@ Health check — confirms the service is running.
 
 ---
 
-### GET /get-member-list
+### GET /lmps/get-member-list
 Returns the list of PromptPay/QR member banks available for cross-bank transfer.
 
 **Headers**
@@ -77,7 +77,7 @@ Returns the list of PromptPay/QR member banks available for cross-bank transfer.
 
 ---
 
-### POST /inquiry-out-account
+### POST /lmps/inquiry-out-account
 Inquiry for an outbound cross-bank transfer — validates recipient and returns fee schedule.
 
 **Headers**
@@ -174,7 +174,7 @@ Inquiry for an outbound cross-bank transfer — validates recipient and returns 
 
 ---
 
-### POST /inquiry-out-qr
+### POST /lmps/inquiry-out-qr
 Inquiry for an outbound cross-bank transfer via QR code — validates recipient and returns fee schedule.
 
 **Headers**
@@ -358,7 +358,7 @@ See [errors.md](errors.md) for the full error response format.
 
 ---
 
-### POST /transfer-out-account-quotation-verify
+### POST /lmps/transfer-out-account-quotation-verify
 Execute an outbound cross-bank transfer to a bank account number. Verifies security answers and performs the transfer in a single call.
 
 Prerequisite: a successful `/inquiry-out-account` call that returned `x_nonce`.
@@ -448,7 +448,7 @@ See [errors.md](errors.md) for the full error response format.
 
 ---
 
-### POST /build-static-qr
+### POST /lmps/build-static-qr
 Generates a static QR code string for the authenticated user's account. The mobile app uses this QR for receiving PromptPay transfers.
 
 **Headers**

@@ -1,5 +1,6 @@
 package com.lbb.lmps.controller;
 
+import com.lbb.lmps.dto.P2PAccountInfoRequest;
 import com.lbb.lmps.dto.P2PAccountInfoResponse;
 import com.lbb.lmps.dto.P2PInquiryRequest;
 import com.lbb.lmps.dto.P2PInquiryResponse;
@@ -17,14 +18,14 @@ public class P2PController {
 
     private final P2PService p2pService;
 
-    @GetMapping("/get-account-info-by-phone")
+    @PostMapping("/get-account-info-by-phone")
     public ResponseEntity<P2PAccountInfoResponse> getAccountInfoByPhone(
-            @RequestParam("cr_phone") String crPhone) {
+            @RequestBody P2PAccountInfoRequest request) {
         log.info(">>> START getAccountInfoByPhone >>>");
-        log.info("> cr_phone: {}", crPhone);
+        log.info("> request body: {}", request);
         long start = System.currentTimeMillis();
 
-        P2PAccountInfoResponse finalResponse = p2pService.getAccountInfoByPhone(crPhone);
+        P2PAccountInfoResponse finalResponse = p2pService.getAccountInfoByPhone(request.getCrPhone());
 
         log.info("< Final response: {} | duration_ms={}", finalResponse, System.currentTimeMillis() - start);
         log.info("<<< END getAccountInfoByPhone request <<<");
