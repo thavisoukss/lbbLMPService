@@ -23,4 +23,7 @@ public class Customer {
 
     @Column(name = "LAST_NAME_EN")
     private String lastNameEn;
+
+    @Column(name = "BIO_KEY")
+    private String bioKey;
 }

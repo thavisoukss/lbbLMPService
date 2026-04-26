@@ -100,6 +100,21 @@ public class Controller {
         return ResponseEntity.ok(finalResponse);
     }
 
+    @PostMapping("/transfer-out-qr-bio-verify")
+    public ResponseEntity<TransferOutQrResponse> transferOutQrBioVerify(
+            @RequestHeader("Device-ID") String deviceId,
+            @Valid @RequestBody TransferOutQrBioRequest request) throws Exception {
+        log.info(">>> START transferOutQrBioVerify >>>");
+        log.info("> request body: {}", request);
+        long start = System.currentTimeMillis();
+
+        TransferOutQrResponse finalResponse = transferOutService.transferOutQrBio(request, deviceId);
+
+        log.info("< Final response: {} | duration_ms={}", finalResponse, System.currentTimeMillis() - start);
+        log.info("<<< END transferOutQrBioVerify request <<<");
+        return ResponseEntity.ok(finalResponse);
+    }
+
     @PostMapping("/transfer-out-qr-quotation-verify")
     public ResponseEntity<TransferOutQrResponse> transferOutQrQuotationVerify(
             @RequestHeader("Device-ID") String deviceId,
