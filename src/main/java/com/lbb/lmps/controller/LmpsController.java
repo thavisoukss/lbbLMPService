@@ -13,9 +13,9 @@ import org.springframework.web.bind.annotation.*;
 
 @Slf4j
 @RestController
-@RequestMapping()
+@RequestMapping("/lmps")
 @RequiredArgsConstructor
-public class Controller {
+public class LmpsController {
 
     private final MemberListService memberListService;
     private final InquiryOutService inquiryOutService;

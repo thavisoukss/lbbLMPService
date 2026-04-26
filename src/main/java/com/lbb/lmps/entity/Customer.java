@@ -26,4 +26,7 @@ public class Customer {
 
     @Column(name = "BIO_KEY")
     private String bioKey;
+
+    @Column(name = "PHONE")
+    private String phone;
 }

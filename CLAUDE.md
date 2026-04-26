@@ -162,3 +162,16 @@ log.info("[transferOutAccount] completed txnId={} totalAmount={} feeAmt={} cbsRe
 **What**: Delegate complex or isolated subtasks to subagents.
 **Why**: Subagents keep the main context window clean and allow focused execution per tech area.
 **How**: Load subagents from `.claude/agents/`. Assign one task per subagent. For complex problems, use multiple subagents in parallel.
+
+---
+
+## Google Drive — Docs Path
+
+API flow docs live in Google Drive. Read them directly from the local sync folder.
+
+| Device | Path |
+|--------|------|
+| Mac | `/Users/nohder/Library/CloudStorage/GoogleDrive-noh.sayachack@gmail.com/My Drive/LBB/lbbplus_api_v1/docs/flows` |
+| Windows | `C:\Users\YourName\Google Drive\My Drive\LBB\lbbplus_api_v1\docs\flows` |
+
+When the user references a flow doc, read it from the path matching the current OS (`darwin` = Mac, `windows` = Windows).

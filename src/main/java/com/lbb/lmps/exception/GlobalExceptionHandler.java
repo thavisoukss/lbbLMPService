@@ -38,7 +38,7 @@ public class GlobalExceptionHandler {
         log.warn("Resource not found: {}", e.getMessage());
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(
                 Map.of("status", "error",
-                       "error", Map.of("code", "RESOURCE_NOT_FOUND"),
+                       "error", Map.of("code", e.getCode()),
                        "message", e.getMessage())
         );
     }
