@@ -1,14 +1,13 @@
 package com.lbb.lmps.controller;
 
 import com.lbb.lmps.dto.P2PAccountInfoResponse;
+import com.lbb.lmps.dto.P2PInquiryRequest;
+import com.lbb.lmps.dto.P2PInquiryResponse;
 import com.lbb.lmps.service.P2PService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @Slf4j
 @RestController
@@ -29,6 +28,19 @@ public class P2PController {
 
         log.info("< Final response: {} | duration_ms={}", finalResponse, System.currentTimeMillis() - start);
         log.info("<<< END getAccountInfoByPhone request <<<");
+        return ResponseEntity.ok(finalResponse);
+    }
+
+    @PostMapping("/inquiry")
+    public ResponseEntity<P2PInquiryResponse> inquiry(@RequestBody P2PInquiryRequest request) {
+        log.info(">>> START inquiry >>>");
+        log.info("> request body: {}", request);
+        long start = System.currentTimeMillis();
+
+        P2PInquiryResponse finalResponse = p2pService.inquiry(request);
+
+        log.info("< Final response: {} | duration_ms={}", finalResponse, System.currentTimeMillis() - start);
+        log.info("<<< END inquiry request <<<");
         return ResponseEntity.ok(finalResponse);
     }
 }
