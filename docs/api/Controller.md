@@ -35,9 +35,10 @@ Returns the list of PromptPay/QR member banks available for cross-bank transfer.
 
 **Headers**
 
-| Header | Required | Description |
-|--------|----------|-------------|
+| Header | Required | Description    |
+|--------|----------|----------------|
 | `Authorization` | Yes | `Bearer <JWT>` |
+| `Device-ID` | Yes | Unique device identifier |
 
 **No request body.**
 
@@ -54,7 +55,7 @@ Returns the list of PromptPay/QR member banks available for cross-bank transfer.
       "bankNameLa": "ທະນາຄານ ລາວ ບູລິຍ໋ອງ",
       "bankNameEn": "Lao Bullion Bank",
       "ftModules": "PROMPTPAY",
-      "status": "ACTIVE",
+      "status": "1",
       "imageUrl": "https://example.com/lbb.jpg"
     }
   ]
