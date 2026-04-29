@@ -3,16 +3,13 @@ package com.lbb.lmps.service.impl;
 import com.lbb.lmps.dto.*;
 import com.lbb.lmps.entity.Account;
 import com.lbb.lmps.entity.Customer;
-import com.lbb.lmps.entity.WithdrawTxn;
 import com.lbb.lmps.exception.ResourceNotFoundException;
 import com.lbb.lmps.remote.ApiCoreBanking;
 import com.lbb.lmps.repository.AccountRepository;
 import com.lbb.lmps.repository.CustomerRepository;
 import com.lbb.lmps.repository.SecurityQuestionRepository;
-import com.lbb.lmps.repository.WithdrawTxnRepository;
 import com.lbb.lmps.service.MinioStorageService;
 import com.lbb.lmps.service.P2PService;
-import com.lbb.lmps.utils.CommonInfo;
 import io.jsonwebtoken.Claims;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -21,7 +18,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -35,11 +31,6 @@ public class P2PServiceImpl implements P2PService {
     private final MinioStorageService minioStorageService;
     private final ApiCoreBanking apiCoreBanking;
     private final SecurityQuestionRepository securityQuestionRepository;
-    private final WithdrawTxnRepository withdrawTxnRepository;
-    private final CommonInfo commonInfo;
-
-    private static final String DEFAULT_CURRENCY = "LAK";
-    private static final long P2P_PAYMENT_CHANNEL_ID = 30L; // Example ID for P2P
 
     @Override
     @Transactional(readOnly = true)
@@ -83,7 +74,7 @@ public class P2PServiceImpl implements P2PService {
     }
 
     @Override
-    @Transactional
+    @Transactional(readOnly = true)
     public P2PInquiryResponse inquiry(P2PInquiryRequest request) {
         log.info("[inquiry] goldWeight={} crPhone={} memo={}", request.getGoldWeight(), request.getCrPhone(), request.getMemo());
         long start = System.currentTimeMillis();
@@ -116,33 +107,8 @@ public class P2PServiceImpl implements P2PService {
                 .map(p -> new SecurityQuestionDto(p.getId(), p.getDescription()))
                 .toList();
 
-        // 5. State Persistence (WithdrawTxn)
+        // 5. Response
         String ref = UUID.randomUUID().toString();
-        String txnId = commonInfo.genTransactionId("P2P");
-
-        WithdrawTxn txn = new WithdrawTxn();
-        txn.setPaymentChannelId(P2P_PAYMENT_CHANNEL_ID);
-        txn.setCustomerId(customerId);
-        txn.setTransactionId(txnId);
-        txn.setNonce(ref);
-        txn.setProviderCode("LMPS");
-        txn.setStatus("DEBIT_PENDING");
-        txn.setDrAccountNo(drAccount.getAccountNo());
-        txn.setDrCif(customerId);
-        txn.setDrAccountName(drAccount.getAccountName());
-        txn.setCrAccountNo(crAccount.getAccountNo());
-        txn.setCrAccountName(crAccount.getAccountName());
-        txn.setAmount(totalAmount);
-        txn.setFeeAmt(BigDecimal.ZERO);
-        txn.setFeeProviderAmt(BigDecimal.ZERO);
-        txn.setCurrencyCode(DEFAULT_CURRENCY);
-        txn.setFeeCurrencyCode(DEFAULT_CURRENCY);
-        txn.setFeeProviderCurrencyCode(DEFAULT_CURRENCY);
-        txn.setRemark("P2P|WEIGHT:" + request.getGoldWeight() + "|MEMO:" + request.getMemo());
-        txn.setCreatedAt(LocalDateTime.now());
-        withdrawTxnRepository.save(txn);
-
-        // 6. Response
         P2PInquiryResponse.P2PInquiryData data = new P2PInquiryResponse.P2PInquiryData();
         data.setRef(ref);
         data.setTtl(180);
@@ -161,7 +127,7 @@ public class P2PServiceImpl implements P2PService {
         response.setStatus("success");
         response.setData(data);
 
-        log.info("[inquiry] completed ref={} txnId={} duration_ms={}", ref, txnId, System.currentTimeMillis() - start);
+        log.info("[inquiry] completed ref={} duration_ms={}", ref, System.currentTimeMillis() - start);
         return response;
     }
 }

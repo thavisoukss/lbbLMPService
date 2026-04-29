@@ -83,14 +83,14 @@ Pre-transfer inquiry for a P2P (gold-weight) transfer. Returns a quotation inclu
 {
   "status": "success",
   "data": {
-    "ref": "P2PREF20260426XYZABC",
-    "ttl": 300,
+    "ref": "a3f1c2d4-e5b6-7890-abcd-ef1234567890",
+    "ttl": 180,
     "dr_account_no": "1200182110002250",
     "dr_account_name": "PITI-PHANTHASOMBATH",
-    "dr_account_currency": "LAK",
+    "dr_account_currency": "LBI",
     "cr_account_no": "1200182110009999",
     "cr_account_name": "ANOUDETH XAYACHACK",
-    "cr_account_currency": "LAK",
+    "cr_account_currency": "LBI",
     "total_amount": 1500000,
     "gold_weight": 0.5,
     "memo": "ຊ່ວຍຄ່າກິນເຂົ້າ",
@@ -108,17 +108,17 @@ Pre-transfer inquiry for a P2P (gold-weight) transfer. Returns a quotation inclu
 | Field | Type | Description |
 |-------|------|-------------|
 | `status` | string | `"success"` on success |
-| `data.ref` | string | Quotation reference — passed to the confirm/transfer step |
-| `data.ttl` | number | Time-to-live in seconds; quotation expires after this duration |
-| `data.dr_account_no` | string | Sender (debit) account number |
+| `data.ref` | string | Quotation reference UUID — passed to the transfer/confirm step |
+| `data.ttl` | number | Time-to-live in seconds; client must not hold this quotation past `180` s |
+| `data.dr_account_no` | string | Sender (debit) LBI account number |
 | `data.dr_account_name` | string | Sender account name |
-| `data.dr_account_currency` | string | Sender account currency |
-| `data.cr_account_no` | string | Recipient (credit) account number |
+| `data.dr_account_currency` | string | Always `"LBI"` |
+| `data.cr_account_no` | string | Recipient (credit) LBI account number |
 | `data.cr_account_name` | string | Recipient account name |
-| `data.cr_account_currency` | string | Recipient account currency |
-| `data.total_amount` | number | Calculated total amount in LAK |
-| `data.gold_weight` | number | Gold weight confirmed by the inquiry |
-| `data.memo` | string | Transfer note echoed back |
+| `data.cr_account_currency` | string | Always `"LBI"` |
+| `data.total_amount` | number | Calculated amount (`gold_weight × CBS sell rate`) |
+| `data.gold_weight` | number | Gold weight echoed back from request |
+| `data.memo` | string | Transfer note echoed back from request |
 | `data.questions` | array | Security questions the user must answer before confirming |
 | `data.questions[].id` | string | Question ID (e.g. `SQ1`) |
 | `data.questions[].description` | string | Question text in Lao |
