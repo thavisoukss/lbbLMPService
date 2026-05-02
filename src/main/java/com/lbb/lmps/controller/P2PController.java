@@ -24,12 +24,13 @@ public class P2PController {
         log.info(">>> START getAccountInfoByPhone >>>");
         log.info("> request body: {}", request);
         long start = System.currentTimeMillis();
-
-        P2PAccountInfoResponse finalResponse = p2pService.getAccountInfoByPhone(request.getCrPhone());
-
-        log.info("< Final response: {} | duration_ms={}", finalResponse, System.currentTimeMillis() - start);
-        log.info("<<< END getAccountInfoByPhone request <<<");
-        return ResponseEntity.ok(finalResponse);
+        try {
+            P2PAccountInfoResponse finalResponse = p2pService.getAccountInfoByPhone(request.getCrPhone());
+            log.info("< Final response: {} | duration_ms={}", finalResponse, System.currentTimeMillis() - start);
+            return ResponseEntity.ok(finalResponse);
+        } finally {
+            log.info("<<< END getAccountInfoByPhone request <<<");
+        }
     }
 
     @PostMapping("/inquiry")
@@ -37,11 +38,12 @@ public class P2PController {
         log.info(">>> START inquiry >>>");
         log.info("> request body: {}", request);
         long start = System.currentTimeMillis();
-
-        P2PInquiryResponse finalResponse = p2pService.inquiry(request);
-
-        log.info("< Final response: {} | duration_ms={}", finalResponse, System.currentTimeMillis() - start);
-        log.info("<<< END inquiry request <<<");
-        return ResponseEntity.ok(finalResponse);
+        try {
+            P2PInquiryResponse finalResponse = p2pService.inquiry(request);
+            log.info("< Final response: {} | duration_ms={}", finalResponse, System.currentTimeMillis() - start);
+            return ResponseEntity.ok(finalResponse);
+        } finally {
+            log.info("<<< END inquiry request <<<");
+        }
     }
 }

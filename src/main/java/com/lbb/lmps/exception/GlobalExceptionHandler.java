@@ -24,8 +24,8 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(MissingRequestHeaderException.class)
     public ResponseEntity<?> handleMissingHeader(MissingRequestHeaderException e) {
-        log.warn("Missing required header: {}", e.getHeaderName());
         String msg = messageSource.getMessage("error.MISSING_HEADER.message", new Object[]{e.getHeaderName()}, LocaleContextHolder.getLocale());
+        log.warn("Exception handled: status=400 code=MISSING_HEADER header={}", e.getHeaderName());
         return ResponseEntity.badRequest().body(
                 Map.of("status", "error",
                        "error", Map.of("code", "MISSING_HEADER"),
@@ -35,7 +35,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(ResourceNotFoundException.class)
     public ResponseEntity<?> handleResourceNotFound(ResourceNotFoundException e) {
-        log.warn("Resource not found: {}", e.getMessage());
+        log.warn("Exception handled: status=404 code={} message={}", e.getCode(), e.getMessage());
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(
                 Map.of("status", "error",
                        "error", Map.of("code", e.getCode()),
@@ -45,7 +45,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(MSmartException.class)
     public ResponseEntity<?> handleMSmart(MSmartException e) {
-        log.warn("m-smart business error: {}", e.getMessage());
+        log.warn("Exception handled: status=200 code={} message={}", e.getCode(), e.getMessage());
         return ResponseEntity.ok(
                 Map.of("status", "error",
                        "error", Map.of("code", e.getCode()),
@@ -55,7 +55,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(BusinessException.class)
     public ResponseEntity<?> handleBusiness(BusinessException e) {
-        log.warn("business error: code={} message={}", e.getCode(), e.getMessage());
+        log.warn("Exception handled: status=200 code={} message={}", e.getCode(), e.getMessage());
         return ResponseEntity.ok(
                 Map.of("status", "error",
                        "error", Map.of("code", e.getCode()),
@@ -68,7 +68,7 @@ public class GlobalExceptionHandler {
         String detail = e.getBindingResult().getFieldErrors().stream()
                 .map(fe -> fe.getField() + " " + fe.getDefaultMessage())
                 .collect(Collectors.joining(", "));
-        log.warn("Validation failed: {}", detail);
+        log.warn("Exception handled: status=400 code=INVALID_REQUEST detail={}", detail);
         return ResponseEntity.badRequest().body(
                 Map.of("status", "error",
                        "error", Map.of("code", "INVALID_REQUEST"),
@@ -78,7 +78,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<?> handleUnexpected(Exception e) {
-        log.error("Unexpected error", e);
+        log.error("Exception handled: status=500 code=INTERNAL_ERROR", e);
         String msg = messageSource.getMessage("error.INTERNAL_ERROR.message", null, LocaleContextHolder.getLocale());
         return ResponseEntity.internalServerError().body(
                 Map.of("status", "error",

@@ -33,12 +33,13 @@ public class LmpsController {
         log.info(">>> START getMemberList >>>");
         log.info("> NO request body:");
         long start = System.currentTimeMillis();
-
-        MemberListResponse finalResponse = memberListService.getMemberList(deviceId);
-
-        log.info("< Final response: {} | duration_ms={}", finalResponse, System.currentTimeMillis() - start);
-        log.info("<<< END getMemberList request <<<");
-        return ResponseEntity.ok(finalResponse);
+        try {
+            MemberListResponse finalResponse = memberListService.getMemberList(deviceId);
+            log.info("< Final response: {} | duration_ms={}", finalResponse, System.currentTimeMillis() - start);
+            return ResponseEntity.ok(finalResponse);
+        } finally {
+            log.info("<<< END getMemberList request <<<");
+        }
     }
 
     @PostMapping("/inquiry-out-qr")
@@ -48,12 +49,13 @@ public class LmpsController {
         log.info(">>> START inquiryOutQr >>>");
         log.info("> qr param: {}", qr);
         long start = System.currentTimeMillis();
-
-        InquiryOutResponse finalResponse = inquiryOutService.inquiryOutQr(qr, deviceId);
-
-        log.info("< Final response: {} | duration_ms={}", finalResponse, System.currentTimeMillis() - start);
-        log.info("<<< END inquiryOutQr request <<<");
-        return ResponseEntity.ok(finalResponse);
+        try {
+            InquiryOutResponse finalResponse = inquiryOutService.inquiryOutQr(qr, deviceId);
+            log.info("< Final response: {} | duration_ms={}", finalResponse, System.currentTimeMillis() - start);
+            return ResponseEntity.ok(finalResponse);
+        } finally {
+            log.info("<<< END inquiryOutQr request <<<");
+        }
     }
 
     @PostMapping("/inquiry-out-account")
@@ -63,12 +65,13 @@ public class LmpsController {
         log.info(">>> START inquiryOutAcct >>>");
         log.info("> request body: {}", request);
         long start = System.currentTimeMillis();
-
-        InquiryOutResponse finalResponse = inquiryOutService.inquiryOut(request, deviceId);
-
-        log.info("< Final response: {} | duration_ms={}", finalResponse, System.currentTimeMillis() - start);
-        log.info("<<< END inquiryOutAcct request <<<");
-        return ResponseEntity.ok(finalResponse);
+        try {
+            InquiryOutResponse finalResponse = inquiryOutService.inquiryOut(request, deviceId);
+            log.info("< Final response: {} | duration_ms={}", finalResponse, System.currentTimeMillis() - start);
+            return ResponseEntity.ok(finalResponse);
+        } finally {
+            log.info("<<< END inquiryOutAcct request <<<");
+        }
     }
 
     @PostMapping("/transfer-out-account-quotation-verify")
@@ -78,12 +81,13 @@ public class LmpsController {
         log.info(">>> START transferOutAccountQuotationVerify >>>");
         log.info("> request body: {}", request);
         long start = System.currentTimeMillis();
-
-        TransferOutQrResponse finalResponse = transferOutService.transferOutAccount(request, deviceId);
-
-        log.info("< Final response: {} | duration_ms={}", finalResponse, System.currentTimeMillis() - start);
-        log.info("<<< END transferOutAccountQuotationVerify request <<<");
-        return ResponseEntity.ok(finalResponse);
+        try {
+            TransferOutQrResponse finalResponse = transferOutService.transferOutAccount(request, deviceId);
+            log.info("< Final response: {} | duration_ms={}", finalResponse, System.currentTimeMillis() - start);
+            return ResponseEntity.ok(finalResponse);
+        } finally {
+            log.info("<<< END transferOutAccountQuotationVerify request <<<");
+        }
     }
 
     @PostMapping("/build-static-qr")
@@ -92,12 +96,13 @@ public class LmpsController {
         log.info(">>> START buildStaticQr >>>");
         log.info("> Device-ID: {}", deviceId);
         long start = System.currentTimeMillis();
-
-        BuildQrResponse finalResponse = buildQrService.buildStaticQr(deviceId);
-
-        log.info("< Final response: {} | duration_ms={}", finalResponse, System.currentTimeMillis() - start);
-        log.info("<<< END buildStaticQr request <<<");
-        return ResponseEntity.ok(finalResponse);
+        try {
+            BuildQrResponse finalResponse = buildQrService.buildStaticQr(deviceId);
+            log.info("< Final response: {} | duration_ms={}", finalResponse, System.currentTimeMillis() - start);
+            return ResponseEntity.ok(finalResponse);
+        } finally {
+            log.info("<<< END buildStaticQr request <<<");
+        }
     }
 
     @PostMapping("/transfer-out-qr-bio-verify")
@@ -107,12 +112,13 @@ public class LmpsController {
         log.info(">>> START transferOutQrBioVerify >>>");
         log.info("> request body: {}", request);
         long start = System.currentTimeMillis();
-
-        TransferOutQrResponse finalResponse = transferOutService.transferOutQrBio(request, deviceId);
-
-        log.info("< Final response: {} | duration_ms={}", finalResponse, System.currentTimeMillis() - start);
-        log.info("<<< END transferOutQrBioVerify request <<<");
-        return ResponseEntity.ok(finalResponse);
+        try {
+            TransferOutQrResponse finalResponse = transferOutService.transferOutQrBio(request, deviceId);
+            log.info("< Final response: {} | duration_ms={}", finalResponse, System.currentTimeMillis() - start);
+            return ResponseEntity.ok(finalResponse);
+        } finally {
+            log.info("<<< END transferOutQrBioVerify request <<<");
+        }
     }
 
     @PostMapping("/transfer-out-qr-quotation-verify")
@@ -122,12 +128,13 @@ public class LmpsController {
         log.info(">>> START transferOutQrQuotationVerify >>>");
         log.info("> request body: {}", request);
         long start = System.currentTimeMillis();
-
-        TransferOutQrResponse finalResponse = transferOutService.transferOutQr(request, deviceId);
-
-        log.info("< Final response: {} | duration_ms={}", finalResponse, System.currentTimeMillis() - start);
-        log.info("<<< END transferOutQrQuotationVerify request <<<");
-        return ResponseEntity.ok(finalResponse);
+        try {
+            TransferOutQrResponse finalResponse = transferOutService.transferOutQr(request, deviceId);
+            log.info("< Final response: {} | duration_ms={}", finalResponse, System.currentTimeMillis() - start);
+            return ResponseEntity.ok(finalResponse);
+        } finally {
+            log.info("<<< END transferOutQrQuotationVerify request <<<");
+        }
     }
 
 }
