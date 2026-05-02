@@ -96,9 +96,10 @@ public class P2PServiceImpl implements P2PService {
                 .orElseThrow(() -> new ResourceNotFoundException("Creditor account not found"));
 
         // 3. Rate Inquiry
-        GoldRateResponse goldRate = apiCoreBanking.getGoldRate();
-        BigDecimal totalAmount = request.getGoldWeight().multiply(goldRate.getSellRate());
-        log.info("[inquiry] goldRate={} totalAmount={}", goldRate.getSellRate(), totalAmount);
+        GoldRateResponse goldRate = apiCoreBanking.getRate();
+        BigDecimal sellRate = goldRate.getData().getSellRate();
+        BigDecimal totalAmount = request.getGoldWeight().multiply(sellRate);
+        log.info("[inquiry] sellRate={} totalAmount={}", sellRate, totalAmount);
 
         // 4. Security Questions
         List<SecurityQuestionRepository.SecurityQuestionProjection> projections =

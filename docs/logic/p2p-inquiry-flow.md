@@ -24,8 +24,8 @@ sequenceDiagram
         LMPS->>DB: ACCOUNT → find CR LBI CURRENT by creditor.id
     end
 
-    LMPS->>CBS: GET /gold-rate
-    CBS-->>LMPS: {sellRate, buyRate, currency}
+    LMPS->>CBS: POST /api/corebanking/getRate<br/>{branch, ccy, historyYn, xrateType}
+    CBS-->>LMPS: {code, status, data: {midRate, buyRate, sellRate}}
 
     LMPS->>DB: SECURITY_QUESTIONS JOIN CUSTOMER_SECURITY_QUESTIONS<br/>WHERE customerId AND STATUS='ACTIVE'
     DB-->>LMPS: [{id, description} × 3]
@@ -57,8 +57,9 @@ sequenceDiagram
    - `ACCOUNT`: `findLbiCurrentByCustomerId(creditor.id)` → same filter → not found → 404
 
 5. **Fetch LBI gold rate from CBS**
-   - `GET /gold-rate` via `ApiCoreBanking` (`RestClient`, connect 5 s / read 10 s timeout)
-   - `total_amount = gold_weight × sellRate`
+   - `POST /api/corebanking/getRate` via `ApiCoreBanking.getRate()` (`RestClient`, connect 5 s / read 10 s timeout)
+   - Fixed body: `{branch:"100", ccy:"LBI", historyYn:false, xrateType:"CSG"}`
+   - `total_amount = gold_weight × data.sellRate`
    - Error or timeout → 500
 
 6. **Load security questions** *(1 JOIN query)*
@@ -79,7 +80,7 @@ sequenceDiagram
 
 | Name | Value | Source |
 |---|---|---|
-| CBS endpoint | `GET /gold-rate` | `ApiCoreBanking.getGoldRate()` |
+| CBS endpoint | `POST /api/corebanking/getRate` | `ApiCoreBanking.getRate()` |
 | CBS timeout | connect 5 s / read 10 s | `RestClient` bean config |
 | Response `ttl` | 180 s | `P2PServiceImpl` |
 | Account filter | `ACCOUNT_CURRENCY='LBI'`, `ACCOUNT_TYPE='CURRENT'` | `AccountRepository` |

@@ -2,7 +2,7 @@ spring:
   application:
     name: lbb-lmps
   profiles:
-    active: dev
+    active: local
 
 server:
   servlet:
@@ -21,3 +21,6 @@ external:
       path-trf-out: /lmps/out/transfer
       path-build-qr: /qr/generate
       path-qr-info: /qr/info
+    cbs:
+      path-root: /api/corebanking
+      path-getrate: /getRate
