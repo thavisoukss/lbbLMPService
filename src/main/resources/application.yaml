@@ -24,3 +24,4 @@ external:
     cbs:
       path-root: /api/corebanking
       path-getrate: /getRate
+      path-p2p-transfer: /p2p/transfer

@@ -9,6 +9,8 @@ import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 
+import java.math.BigDecimal;
+
 @Slf4j
 @Service
 public class ApiCoreBanking {
@@ -18,6 +20,9 @@ public class ApiCoreBanking {
 
     @Value("${external.api.cbs.path-getrate}")
     private String pathGetRate;
+
+    @Value("${external.api.cbs.path-p2p-transfer}")
+    private String pathP2PTransfer;
 
     private final RestClient restClient;
 
@@ -53,4 +58,20 @@ public class ApiCoreBanking {
             throw new RuntimeException("CBS error: " + e.getMessage());
         }
     }
+
+    /**
+     * MOCKUP — CBS P2P transfer endpoint details not yet confirmed.
+     * Replace this implementation once CBS /p2p/transfer spec is available.
+     */
+    public CbsP2PTransferResult p2pTransfer(String transactionId, String customerId,
+                                             String drAccountNo, String crAccountNo,
+                                             BigDecimal goldWeight, String memo) {
+        log.info("[ApiCoreBanking] [MOCKUP] p2pTransfer txnId={} drAccountNo={} crAccountNo={} goldWeight={}",
+                transactionId, drAccountNo, crAccountNo, goldWeight);
+        String slipCode = "SLP" + transactionId.substring(Math.max(0, transactionId.length() - 8));
+        log.info("[ApiCoreBanking] [MOCKUP] p2pTransfer success slipCode={}", slipCode);
+        return new CbsP2PTransferResult(transactionId, slipCode);
+    }
+
+    public record CbsP2PTransferResult(String transactionId, String slipCode) {}
 }

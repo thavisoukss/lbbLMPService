@@ -4,6 +4,8 @@ import com.lbb.lmps.dto.P2PAccountInfoRequest;
 import com.lbb.lmps.dto.P2PAccountInfoResponse;
 import com.lbb.lmps.dto.P2PInquiryRequest;
 import com.lbb.lmps.dto.P2PInquiryResponse;
+import com.lbb.lmps.dto.P2PTransferVerifyRequest;
+import com.lbb.lmps.dto.P2PTransferVerifyResponse;
 import com.lbb.lmps.service.P2PService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -44,6 +46,21 @@ public class P2PController {
             return ResponseEntity.ok(finalResponse);
         } finally {
             log.info("<<< END inquiry request <<<");
+        }
+    }
+
+    @PostMapping("/transfer-quotation-verify")
+    public ResponseEntity<P2PTransferVerifyResponse> transferQuotationVerify(
+            @RequestBody P2PTransferVerifyRequest request) {
+        log.info(">>> START transferQuotationVerify >>>");
+        log.info("> request body: {}", request);
+        long start = System.currentTimeMillis();
+        try {
+            P2PTransferVerifyResponse finalResponse = p2pService.transferQuotationVerify(request);
+            log.info("< Final response: {} | duration_ms={}", finalResponse, System.currentTimeMillis() - start);
+            return ResponseEntity.ok(finalResponse);
+        } finally {
+            log.info("<<< END transferQuotationVerify request <<<");
         }
     }
 }
