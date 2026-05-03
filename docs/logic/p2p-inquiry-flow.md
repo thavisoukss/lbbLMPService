@@ -32,7 +32,7 @@ sequenceDiagram
 
     LMPS->>LMPS: Compute total_amount = gold_weight × sellRate
     LMPS->>LMPS: Generate txn_id via genTransactionId("P2P")
-    LMPS->>DB: INSERT P2P_TXN_DETAIL (STATUS=PENDING, EXPIRED_AT=now+3min)
+    LMPS->>DB: INSERT P2P_TXN_DETAIL (STATUS=PENDING, PURPOSE=memo, EXPIRED_AT=now+3min)
 
     LMPS-->>App: {status, data: {ref, ttl, dr/cr accounts, total_amount, questions[]}}
 ```
@@ -70,7 +70,7 @@ sequenceDiagram
 
 7. **Save inquiry to DB and return response**
    - Generate `ref = commonInfo.genTransactionId("P2P")` — format `P2Pyydddsssssmmmrrr`
-   - INSERT `P2P_TXN_DETAIL` with `STATUS=PENDING`, `EXPIRED_AT=now+3min`
+   - INSERT `P2P_TXN_DETAIL` with `STATUS=PENDING`, `EXPIRED_AT=now+3min`; request `memo` is stored as `PURPOSE`
    - `ttl` = `180` s — client should not submit verify after this
    - DR and CR account fields from steps 3–4
    - `total_amount` = gold_weight × sellRate

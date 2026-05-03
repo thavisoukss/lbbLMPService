@@ -13,6 +13,12 @@
 | 1 | CREATE TABLE | `P2P_TXN_DETAIL` | New table for P2P inquiry state |
 | 2 | DROP TABLE | `P2P_QUOTATION` | Replaced by `P2P_TXN_DETAIL` |
 | 3 | ADD COLUMN | `WITHDRAW_TXN.FEE_LIST` | Fee schedule JSON snapshot |
+| 4 | RENAME COLUMN | `P2P_TXN_DETAIL.MEMO` → `PURPOSE` | Renamed for clarity |
+| 5 | ADD COLUMN | `P2P_TXN_DETAIL.FEE_CUR` | Fee currency code |
+| 6 | ADD COLUMN | `P2P_TXN_DETAIL.FEE_AMOUNT` | Fee amount |
+| 7 | ADD COLUMN | `P2P_TXN_DETAIL.CR_CBS_SEQNO` | CBS credit-side sequence number |
+| 8 | ADD COLUMN | `P2P_TXN_DETAIL.DR_CBS_SEQNO` | CBS debit-side sequence number |
+| 9 | ADD COLUMN | `P2P_TXN_DETAIL.UPDATE_AT` | Last update timestamp |
 
 ---
 
@@ -76,6 +82,35 @@ ALTER TABLE WITHDRAW_TXN ADD (
 
 ---
 
+## 4. ALTER TABLE — P2P_TXN_DETAIL (column adjustments)
+
+```sql
+-- Rename MEMO to PURPOSE
+ALTER TABLE P2P_TXN_DETAIL RENAME COLUMN MEMO TO PURPOSE;
+
+-- Add new columns
+ALTER TABLE P2P_TXN_DETAIL ADD (
+    FEE_CUR      VARCHAR2(3),
+    FEE_AMOUNT   NUMBER(18,4),
+    CR_CBS_SEQNO VARCHAR2(100),
+    DR_CBS_SEQNO VARCHAR2(100),
+    UPDATE_AT    TIMESTAMP
+);
+```
+
+### Column Notes
+
+| Column | Note |
+|--------|------|
+| `PURPOSE` | Renamed from `MEMO`. Stores the optional transfer remark supplied by the sender. Existing data is preserved. |
+| `FEE_CUR` | Fee currency code (e.g. `LBI`). NULL at `PENDING`; populated when `STATUS = COMPLETED`. |
+| `FEE_AMOUNT` | Fee amount charged for the transfer. NULL at `PENDING`; populated when `STATUS = COMPLETED`. |
+| `CR_CBS_SEQNO` | Credit-side sequence number returned by CBS after a successful transfer. NULL until `STATUS = COMPLETED`. Format: `CR{suffix}` (mockup). |
+| `DR_CBS_SEQNO` | Debit-side sequence number returned by CBS after a successful transfer. NULL until `STATUS = COMPLETED`. Format: `DR{suffix}` (mockup). |
+| `UPDATE_AT` | Timestamp set by the service when the record transitions to `COMPLETED`. NULL at `PENDING`. |
+
+---
+
 ## P2P Flow (for reference)
 
 ```
@@ -84,5 +119,10 @@ POST /p2p/inquiry
 
 POST /p2p/transfer-quotation-verify
     ├── SELECT P2P_TXN_DETAIL WHERE TXN_ID = :ref  (must be PENDING, not expired)
-    └── UPDATE P2P_TXN_DETAIL   SET STATUS = 'COMPLETED', CBS_REF_NO = :cbsRefNo
+    └── UPDATE P2P_TXN_DETAIL
+            SET STATUS       = 'COMPLETED',
+                CBS_REF_NO   = :cbsRefNo,      -- starts with 'CBS'
+                DR_CBS_SEQNO = :drCbsSeqno,
+                CR_CBS_SEQNO = :crCbsSeqno,
+                UPDATE_AT    = :now
 ```

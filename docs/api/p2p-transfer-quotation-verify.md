@@ -26,7 +26,7 @@ Must be called within 3 minutes of the corresponding `/p2p/inquiry` call.
 {
   "status": "success",
   "data": {
-    "transaction_id": "P2P2612300123456789",
+    "transaction_id": "CBS23456789",
     "slip_code": "SLP23456789",
     "tran_date": "2026-05-02 16:40:00",
     "dr_account_no": "1200175610002081",
