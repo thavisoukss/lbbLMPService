@@ -10,15 +10,18 @@ import java.time.LocalDateTime;
 @Getter
 @Setter
 @Entity
-@Table(name = "P2P_QUOTATION")
-public class P2PQuotation {
+@Table(name = "P2P_TXN_DETAIL")
+public class P2PTxnDetail {
 
     @Id
-    @Column(name = "REF", nullable = false, length = 50)
-    private String ref;
+    @Column(name = "TXN_ID", nullable = false, length = 50)
+    private String txnId;
 
     @Column(name = "CUSTOMER_ID", nullable = false, length = 50)
     private String customerId;
+
+    @Column(name = "CBS_ID", length = 100)
+    private String cbsId;
 
     @Column(name = "DR_ACCOUNT_NO", nullable = false, length = 50)
     private String drAccountNo;

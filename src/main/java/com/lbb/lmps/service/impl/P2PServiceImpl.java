@@ -3,14 +3,14 @@ package com.lbb.lmps.service.impl;
 import com.lbb.lmps.dto.*;
 import com.lbb.lmps.entity.Account;
 import com.lbb.lmps.entity.Customer;
-import com.lbb.lmps.entity.P2PQuotation;
+import com.lbb.lmps.entity.P2PTxnDetail;
 import com.lbb.lmps.entity.P2PTransaction;
 import com.lbb.lmps.exception.BusinessException;
 import com.lbb.lmps.exception.ResourceNotFoundException;
 import com.lbb.lmps.remote.ApiCoreBanking;
 import com.lbb.lmps.repository.AccountRepository;
 import com.lbb.lmps.repository.CustomerRepository;
-import com.lbb.lmps.repository.P2PQuotationRepository;
+import com.lbb.lmps.repository.P2PTxnDetailRepository;
 import com.lbb.lmps.repository.P2PTransactionRepository;
 import com.lbb.lmps.repository.SecurityQuestionRepository;
 import com.lbb.lmps.service.MinioStorageService;
@@ -29,7 +29,6 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -46,7 +45,7 @@ public class P2PServiceImpl implements P2PService {
     private final MinioStorageService minioStorageService;
     private final ApiCoreBanking apiCoreBanking;
     private final SecurityQuestionRepository securityQuestionRepository;
-    private final P2PQuotationRepository p2pQuotationRepository;
+    private final P2PTxnDetailRepository p2pTxnDetailRepository;
     private final P2PTransactionRepository p2pTransactionRepository;
     private final CommonInfo commonInfo;
 
@@ -126,27 +125,27 @@ public class P2PServiceImpl implements P2PService {
                 .map(p -> new SecurityQuestionDto(p.getId(), p.getDescription()))
                 .toList();
 
-        // 5. Save quotation to DB for use at verify time
-        String ref = UUID.randomUUID().toString();
+        // 5. Insert P2P_TXN_DETAILS with status PENDING
+        String ref = commonInfo.genTransactionId("P2P");
         LocalDateTime now = LocalDateTime.now();
 
-        P2PQuotation quotation = new P2PQuotation();
-        quotation.setRef(ref);
-        quotation.setCustomerId(customerId);
-        quotation.setDrAccountNo(drAccount.getAccountNo());
-        quotation.setDrAccountName(drAccount.getAccountName());
-        quotation.setDrCcy(drAccount.getAccountCurrency());
-        quotation.setCrAccountNo(crAccount.getAccountNo());
-        quotation.setCrAccountName(crAccount.getAccountName());
-        quotation.setCrCcy(crAccount.getAccountCurrency());
-        quotation.setGoldWeight(request.getGoldWeight());
-        quotation.setTotalAmount(totalAmount);
-        quotation.setMemo(request.getMemo());
-        quotation.setStatus("PENDING");
-        quotation.setCreatedAt(now);
-        quotation.setExpiredAt(now.plusMinutes(QUOTATION_TTL_MINUTES));
-        p2pQuotationRepository.save(quotation);
-        log.info("[inquiry] quotation saved ref={} expiredAt={}", ref, quotation.getExpiredAt());
+        P2PTxnDetail details = new P2PTxnDetail();
+        details.setTxnId(ref);
+        details.setCustomerId(customerId);
+        details.setDrAccountNo(drAccount.getAccountNo());
+        details.setDrAccountName(drAccount.getAccountName());
+        details.setDrCcy(drAccount.getAccountCurrency());
+        details.setCrAccountNo(crAccount.getAccountNo());
+        details.setCrAccountName(crAccount.getAccountName());
+        details.setCrCcy(crAccount.getAccountCurrency());
+        details.setGoldWeight(request.getGoldWeight());
+        details.setTotalAmount(totalAmount);
+        details.setMemo(request.getMemo());
+        details.setStatus("PENDING");
+        details.setCreatedAt(now);
+        details.setExpiredAt(now.plusMinutes(QUOTATION_TTL_MINUTES));
+        p2pTxnDetailRepository.save(details);
+        log.info("[inquiry] P2P_TXN_DETAILS saved ref={} status=PENDING expiredAt={}", ref, details.getExpiredAt());
 
         // 6. Build response
         P2PInquiryResponse.P2PInquiryData data = new P2PInquiryResponse.P2PInquiryData();
@@ -181,25 +180,25 @@ public class P2PServiceImpl implements P2PService {
         String customerId = (String) claims.get("user-id");
         log.info("[transferQuotationVerify] customerId={}", customerId);
 
-        // 1. Load and validate quotation
-        P2PQuotation quotation = p2pQuotationRepository.findById(request.getRef())
+        // 1. Load and validate P2P_TXN_DETAILS
+        P2PTxnDetail details = p2pTxnDetailRepository.findById(request.getRef())
                 .orElseThrow(() -> {
-                    log.warn("[transferQuotationVerify] quotation not found ref={}", request.getRef());
+                    log.warn("[transferQuotationVerify] details not found ref={}", request.getRef());
                     return new ResourceNotFoundException("QuotationNotFound", "Quotation not found or expired");
                 });
 
-        if (!customerId.equals(quotation.getCustomerId())) {
-            log.warn("[transferQuotationVerify] ownership mismatch caller={} owner={}", customerId, quotation.getCustomerId());
+        if (!customerId.equals(details.getCustomerId())) {
+            log.warn("[transferQuotationVerify] ownership mismatch caller={} owner={}", customerId, details.getCustomerId());
             throw new ResourceNotFoundException("QuotationNotFound", "Quotation not found or expired");
         }
 
-        if (!"PENDING".equals(quotation.getStatus())) {
-            log.warn("[transferQuotationVerify] quotation already used ref={} status={}", request.getRef(), quotation.getStatus());
+        if (!"PENDING".equals(details.getStatus())) {
+            log.warn("[transferQuotationVerify] already used ref={} status={}", request.getRef(), details.getStatus());
             throw new BusinessException("QuotationAlreadyUsed", "Quotation has already been used");
         }
 
-        if (LocalDateTime.now().isAfter(quotation.getExpiredAt())) {
-            log.warn("[transferQuotationVerify] quotation expired ref={} expiredAt={}", request.getRef(), quotation.getExpiredAt());
+        if (LocalDateTime.now().isAfter(details.getExpiredAt())) {
+            log.warn("[transferQuotationVerify] expired ref={} expiredAt={}", request.getRef(), details.getExpiredAt());
             throw new BusinessException("QuotationExpired", "Quotation has expired, please start a new inquiry");
         }
 
@@ -218,49 +217,51 @@ public class P2PServiceImpl implements P2PService {
 
         // 3. Call CBS P2P transfer (MOCKUP)
         String transactionId = commonInfo.genTransactionId("P2P");
-        log.info("[transferQuotationVerify] calling CBS p2pTransfer txnId={} goldWeight={}", transactionId, quotation.getGoldWeight());
+        log.info("[transferQuotationVerify] calling CBS p2pTransfer txnId={} goldWeight={}", transactionId, details.getGoldWeight());
         ApiCoreBanking.CbsP2PTransferResult cbsResult = apiCoreBanking.p2pTransfer(
                 transactionId, customerId,
-                quotation.getDrAccountNo(), quotation.getCrAccountNo(),
-                quotation.getGoldWeight(), quotation.getMemo());
+                details.getDrAccountNo(), details.getCrAccountNo(),
+                details.getGoldWeight(), details.getMemo());
         log.info("[transferQuotationVerify] CBS p2pTransfer success slipCode={}", cbsResult.slipCode());
 
-        // 4. Save P2P_TRANSACTION record
+        // 4. Insert P2P_TRANSACTION
         LocalDateTime now = LocalDateTime.now();
         P2PTransaction txn = new P2PTransaction();
         txn.setTransactionId(cbsResult.transactionId());
         txn.setCustomerId(customerId);
         txn.setCoreBankingSeqno(cbsResult.slipCode());
-        txn.setDrAccountNo(quotation.getDrAccountNo());
-        txn.setDrCurrencyCode(quotation.getDrCcy());
-        txn.setCrAccountNo(quotation.getCrAccountNo());
-        txn.setCrCurrencyCode(quotation.getCrCcy());
-        txn.setGoldWeight(quotation.getGoldWeight());
+        txn.setDrAccountNo(details.getDrAccountNo());
+        txn.setDrCurrencyCode(details.getDrCcy());
+        txn.setCrAccountNo(details.getCrAccountNo());
+        txn.setCrCurrencyCode(details.getCrCcy());
+        txn.setGoldWeight(details.getGoldWeight());
         txn.setFeeAmount(BigDecimal.ZERO);
-        txn.setFeeCurrencyCode(quotation.getDrCcy());
+        txn.setFeeCurrencyCode(details.getDrCcy());
         txn.setTransactionDate(now);
         txn.setCreatedAt(now);
-        txn.setRemark(quotation.getMemo());
+        txn.setRemark(details.getMemo());
         p2pTransactionRepository.save(txn);
         log.info("[transferQuotationVerify] P2P_TRANSACTION saved txnId={}", cbsResult.transactionId());
 
-        // 5. Mark quotation as used
-        quotation.setStatus("COMPLETED");
-        p2pQuotationRepository.save(quotation);
+        // 5. Mark P2P_TXN_DETAILS as COMPLETED
+        details.setCbsId(cbsResult.transactionId());
+        details.setStatus("COMPLETED");
+        p2pTxnDetailRepository.save(details);
+        log.info("[transferQuotationVerify] P2P_TXN_DETAIL updated txnId={} status=COMPLETED", request.getRef());
 
         // 6. Build response
         P2PTransferVerifyResponse.TransferData data = new P2PTransferVerifyResponse.TransferData();
         data.setTransactionId(cbsResult.transactionId());
         data.setSlipCode(cbsResult.slipCode());
         data.setTranDate(now.format(TRAN_DATE_FMT));
-        data.setDrAccountNo(quotation.getDrAccountNo());
-        data.setDrAccountName(quotation.getDrAccountName());
-        data.setDrAccountCcy(quotation.getDrCcy());
-        data.setCrAccountNo(quotation.getCrAccountNo());
-        data.setCrAccountName(quotation.getCrAccountName());
-        data.setCrAccountCcy(quotation.getCrCcy());
-        data.setGoldWeight(quotation.getGoldWeight());
-        data.setMemo(quotation.getMemo());
+        data.setDrAccountNo(details.getDrAccountNo());
+        data.setDrAccountName(details.getDrAccountName());
+        data.setDrAccountCcy(details.getDrCcy());
+        data.setCrAccountNo(details.getCrAccountNo());
+        data.setCrAccountName(details.getCrAccountName());
+        data.setCrAccountCcy(details.getCrCcy());
+        data.setGoldWeight(details.getGoldWeight());
+        data.setMemo(details.getMemo());
         data.setFee(BigDecimal.ZERO);
 
         P2PTransferVerifyResponse response = new P2PTransferVerifyResponse();
@@ -268,7 +269,7 @@ public class P2PServiceImpl implements P2PService {
         response.setData(data);
 
         log.info("[transferQuotationVerify] completed txnId={} slipCode={} goldWeight={} duration_ms={}",
-                cbsResult.transactionId(), cbsResult.slipCode(), quotation.getGoldWeight(),
+                cbsResult.transactionId(), cbsResult.slipCode(), details.getGoldWeight(),
                 System.currentTimeMillis() - start);
         return response;
     }
