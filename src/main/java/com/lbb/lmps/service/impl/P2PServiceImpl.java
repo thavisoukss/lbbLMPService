@@ -177,8 +177,8 @@ public class P2PServiceImpl implements P2PService {
         String customerId = (String) claims.get("user-id");
         log.info("[transferQuotationVerify] customerId={}", customerId);
 
-        // 1. Load and validate P2P_TXN_DETAILS
-        P2PTxnDetail details = p2pTxnDetailRepository.findById(request.getRef())
+        // 1. Load and validate P2P_TXN_DETAILS — pessimistic write lock prevents concurrent double-transfer
+        P2PTxnDetail details = p2pTxnDetailRepository.findByIdForUpdate(request.getRef())
                 .orElseThrow(() -> {
                     log.warn("[transferQuotationVerify] details not found ref={}", request.getRef());
                     return new ResourceNotFoundException("QuotationNotFound", "Quotation not found or expired");
