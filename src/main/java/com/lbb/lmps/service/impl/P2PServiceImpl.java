@@ -4,14 +4,12 @@ import com.lbb.lmps.dto.*;
 import com.lbb.lmps.entity.Account;
 import com.lbb.lmps.entity.Customer;
 import com.lbb.lmps.entity.P2PTxnDetail;
-import com.lbb.lmps.entity.P2PTransaction;
 import com.lbb.lmps.exception.BusinessException;
 import com.lbb.lmps.exception.ResourceNotFoundException;
 import com.lbb.lmps.remote.ApiCoreBanking;
 import com.lbb.lmps.repository.AccountRepository;
 import com.lbb.lmps.repository.CustomerRepository;
 import com.lbb.lmps.repository.P2PTxnDetailRepository;
-import com.lbb.lmps.repository.P2PTransactionRepository;
 import com.lbb.lmps.repository.SecurityQuestionRepository;
 import com.lbb.lmps.service.MinioStorageService;
 import com.lbb.lmps.service.P2PService;
@@ -46,7 +44,6 @@ public class P2PServiceImpl implements P2PService {
     private final ApiCoreBanking apiCoreBanking;
     private final SecurityQuestionRepository securityQuestionRepository;
     private final P2PTxnDetailRepository p2pTxnDetailRepository;
-    private final P2PTransactionRepository p2pTransactionRepository;
     private final CommonInfo commonInfo;
 
     @Override
@@ -224,26 +221,8 @@ public class P2PServiceImpl implements P2PService {
                 details.getGoldWeight(), details.getMemo());
         log.info("[transferQuotationVerify] CBS p2pTransfer success slipCode={}", cbsResult.slipCode());
 
-        // 4. Insert P2P_TRANSACTION
+        // 4. Mark P2P_TXN_DETAIL as COMPLETED
         LocalDateTime now = LocalDateTime.now();
-        P2PTransaction txn = new P2PTransaction();
-        txn.setTransactionId(cbsResult.transactionId());
-        txn.setCustomerId(customerId);
-        txn.setCoreBankingSeqno(cbsResult.slipCode());
-        txn.setDrAccountNo(details.getDrAccountNo());
-        txn.setDrCurrencyCode(details.getDrCcy());
-        txn.setCrAccountNo(details.getCrAccountNo());
-        txn.setCrCurrencyCode(details.getCrCcy());
-        txn.setGoldWeight(details.getGoldWeight());
-        txn.setFeeAmount(BigDecimal.ZERO);
-        txn.setFeeCurrencyCode(details.getDrCcy());
-        txn.setTransactionDate(now);
-        txn.setCreatedAt(now);
-        txn.setRemark(details.getMemo());
-        p2pTransactionRepository.save(txn);
-        log.info("[transferQuotationVerify] P2P_TRANSACTION saved txnId={}", cbsResult.transactionId());
-
-        // 5. Mark P2P_TXN_DETAILS as COMPLETED
         details.setCbsRefNo(cbsResult.transactionId());
         details.setStatus("COMPLETED");
         p2pTxnDetailRepository.save(details);

@@ -12,8 +12,7 @@
 |---|--------|--------|--------|
 | 1 | CREATE TABLE | `P2P_TXN_DETAIL` | New table for P2P inquiry state |
 | 2 | DROP TABLE | `P2P_QUOTATION` | Replaced by `P2P_TXN_DETAIL` |
-| 3 | No change | `P2P_TRANSACTION` | Existing table unchanged |
-| 4 | ADD COLUMN | `WITHDRAW_TXN.FEE_LIST` | Fee schedule JSON snapshot |
+| 3 | ADD COLUMN | `WITHDRAW_TXN.FEE_LIST` | Fee schedule JSON snapshot |
 
 ---
 
@@ -63,13 +62,7 @@ DROP TABLE P2P_QUOTATION;
 
 ---
 
-## 3. P2P_TRANSACTION — No Change
-
-`P2P_TRANSACTION` is unchanged. It continues to record the final completed transfer result inserted by the service after CBS confirms the transfer.
-
----
-
-## 4. ADD COLUMN — WITHDRAW_TXN.FEE_LIST
+## 3. ADD COLUMN — WITHDRAW_TXN.FEE_LIST
 
 ```sql
 ALTER TABLE WITHDRAW_TXN ADD (
@@ -91,6 +84,5 @@ POST /p2p/inquiry
 
 POST /p2p/transfer-quotation-verify
     ├── SELECT P2P_TXN_DETAIL WHERE TXN_ID = :ref  (must be PENDING, not expired)
-    ├── INSERT P2P_TRANSACTION  (completed transfer record)
     └── UPDATE P2P_TXN_DETAIL   SET STATUS = 'COMPLETED', CBS_REF_NO = :cbsRefNo
 ```

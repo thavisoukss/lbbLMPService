@@ -31,7 +31,8 @@ sequenceDiagram
     DB-->>LMPS: [{id, description} × 3]
 
     LMPS->>LMPS: Compute total_amount = gold_weight × sellRate
-    LMPS->>LMPS: Generate ref (UUID)
+    LMPS->>LMPS: Generate txn_id via genTransactionId("P2P")
+    LMPS->>DB: INSERT P2P_TXN_DETAIL (STATUS=PENDING, EXPIRED_AT=now+3min)
 
     LMPS-->>App: {status, data: {ref, ttl, dr/cr accounts, total_amount, questions[]}}
 ```
@@ -67,9 +68,10 @@ sequenceDiagram
    - Returns 3 rows `{id, description}`
    - Error → 500
 
-7. **Build and return response**
-   - Generate `ref = UUID.randomUUID()` — returned to the client as the transfer nonce
-   - `ttl` = `180` s — client should not hold this quotation longer
+7. **Save inquiry to DB and return response**
+   - Generate `ref = commonInfo.genTransactionId("P2P")` — format `P2Pyydddsssssmmmrrr`
+   - INSERT `P2P_TXN_DETAIL` with `STATUS=PENDING`, `EXPIRED_AT=now+3min`
+   - `ttl` = `180` s — client should not submit verify after this
    - DR and CR account fields from steps 3–4
    - `total_amount` = gold_weight × sellRate
    - `questions[]` = 3 entries from step 6
@@ -84,7 +86,7 @@ sequenceDiagram
 | CBS timeout | connect 5 s / read 10 s | `RestClient` bean config |
 | Response `ttl` | 180 s | `P2PServiceImpl` |
 | Account filter | `ACCOUNT_CURRENCY='LBI'`, `ACCOUNT_TYPE='CURRENT'` | `AccountRepository` |
-| `ref` | raw UUID (no prefix) | `P2PServiceImpl` |
+| `ref` | `P2Pyydddsssssmmmrrr` via `genTransactionId("P2P")` | `P2PServiceImpl` |
 
 ---
 
