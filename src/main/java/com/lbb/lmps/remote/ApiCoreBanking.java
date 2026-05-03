@@ -68,10 +68,14 @@ public class ApiCoreBanking {
                                              BigDecimal goldWeight, String memo) {
         log.info("[ApiCoreBanking] [MOCKUP] p2pTransfer txnId={} drAccountNo={} crAccountNo={} goldWeight={}",
                 transactionId, drAccountNo, crAccountNo, goldWeight);
-        String slipCode = "SLP" + transactionId.substring(Math.max(0, transactionId.length() - 8));
-        log.info("[ApiCoreBanking] [MOCKUP] p2pTransfer success slipCode={}", slipCode);
-        return new CbsP2PTransferResult(transactionId, slipCode);
+        String suffix = transactionId.substring(Math.max(0, transactionId.length() - 8));
+        String cbsRefNo = "CBS" + suffix;
+        String slipCode = "SLP" + suffix;
+        String drCbsSeqno = "DR" + suffix;
+        String crCbsSeqno = "CR" + suffix;
+        log.info("[ApiCoreBanking] [MOCKUP] p2pTransfer success cbsRefNo={} slipCode={} drCbsSeqno={} crCbsSeqno={}", cbsRefNo, slipCode, drCbsSeqno, crCbsSeqno);
+        return new CbsP2PTransferResult(cbsRefNo, slipCode, drCbsSeqno, crCbsSeqno);
     }
 
-    public record CbsP2PTransferResult(String transactionId, String slipCode) {}
+    public record CbsP2PTransferResult(String transactionId, String slipCode, String drCbsSeqno, String crCbsSeqno) {}
 }

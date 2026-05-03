@@ -47,8 +47,20 @@ public class P2PTxnDetail {
     @Column(name = "TOTAL_AMOUNT", nullable = false, precision = 18, scale = 4)
     private BigDecimal totalAmount;
 
-    @Column(name = "MEMO", length = 500)
-    private String memo;
+    @Column(name = "PURPOSE", length = 500)
+    private String purpose;
+
+    @Column(name = "FEE_CUR", length = 3)
+    private String feeCur;
+
+    @Column(name = "FEE_AMOUNT", precision = 18, scale = 4)
+    private BigDecimal feeAmount;
+
+    @Column(name = "CR_CBS_SEQNO", length = 100)
+    private String crCbsSeqno;
+
+    @Column(name = "DR_CBS_SEQNO", length = 100)
+    private String drCbsSeqno;
 
     @Column(name = "STATUS", nullable = false, length = 20)
     private String status;
@@ -58,4 +70,7 @@ public class P2PTxnDetail {
 
     @Column(name = "EXPIRED_AT", nullable = false)
     private LocalDateTime expiredAt;
+
+    @Column(name = "UPDATE_AT")
+    private LocalDateTime updateAt;
 }

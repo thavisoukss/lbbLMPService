@@ -137,7 +137,7 @@ public class P2PServiceImpl implements P2PService {
         details.setCrCcy(crAccount.getAccountCurrency());
         details.setGoldWeight(request.getGoldWeight());
         details.setTotalAmount(totalAmount);
-        details.setMemo(request.getMemo());
+        details.setPurpose(request.getMemo());
         details.setStatus("PENDING");
         details.setCreatedAt(now);
         details.setExpiredAt(now.plusMinutes(QUOTATION_TTL_MINUTES));
@@ -218,15 +218,18 @@ public class P2PServiceImpl implements P2PService {
         ApiCoreBanking.CbsP2PTransferResult cbsResult = apiCoreBanking.p2pTransfer(
                 transactionId, customerId,
                 details.getDrAccountNo(), details.getCrAccountNo(),
-                details.getGoldWeight(), details.getMemo());
+                details.getGoldWeight(), details.getPurpose());
         log.info("[transferQuotationVerify] CBS p2pTransfer success slipCode={}", cbsResult.slipCode());
 
         // 4. Mark P2P_TXN_DETAIL as COMPLETED
         LocalDateTime now = LocalDateTime.now();
         details.setCbsRefNo(cbsResult.transactionId());
+        details.setDrCbsSeqno(cbsResult.drCbsSeqno());
+        details.setCrCbsSeqno(cbsResult.crCbsSeqno());
         details.setStatus("COMPLETED");
+        details.setUpdateAt(now);
         p2pTxnDetailRepository.save(details);
-        log.info("[transferQuotationVerify] P2P_TXN_DETAIL updated txnId={} status=COMPLETED", request.getRef());
+        log.info("[transferQuotationVerify] P2P_TXN_DETAIL updated txnId={} status=COMPLETED drCbsSeqno={} crCbsSeqno={}", request.getRef(), cbsResult.drCbsSeqno(), cbsResult.crCbsSeqno());
 
         // 6. Build response
         P2PTransferVerifyResponse.TransferData data = new P2PTransferVerifyResponse.TransferData();
@@ -240,7 +243,7 @@ public class P2PServiceImpl implements P2PService {
         data.setCrAccountName(details.getCrAccountName());
         data.setCrAccountCcy(details.getCrCcy());
         data.setGoldWeight(details.getGoldWeight());
-        data.setMemo(details.getMemo());
+        data.setMemo(details.getPurpose());
         data.setFee(BigDecimal.ZERO);
 
         P2PTransferVerifyResponse response = new P2PTransferVerifyResponse();
