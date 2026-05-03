@@ -244,7 +244,7 @@ public class P2PServiceImpl implements P2PService {
         log.info("[transferQuotationVerify] P2P_TRANSACTION saved txnId={}", cbsResult.transactionId());
 
         // 5. Mark P2P_TXN_DETAILS as COMPLETED
-        details.setCbsId(cbsResult.transactionId());
+        details.setCbsRefNo(cbsResult.transactionId());
         details.setStatus("COMPLETED");
         p2pTxnDetailRepository.save(details);
         log.info("[transferQuotationVerify] P2P_TXN_DETAIL updated txnId={} status=COMPLETED", request.getRef());

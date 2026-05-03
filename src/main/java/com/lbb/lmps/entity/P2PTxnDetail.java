@@ -20,8 +20,8 @@ public class P2PTxnDetail {
     @Column(name = "CUSTOMER_ID", nullable = false, length = 50)
     private String customerId;
 
-    @Column(name = "CBS_ID", length = 100)
-    private String cbsId;
+    @Column(name = "CBS_REF_NO", length = 100)
+    private String cbsRefNo;
 
     @Column(name = "DR_ACCOUNT_NO", nullable = false, length = 50)
     private String drAccountNo;
