@@ -88,7 +88,6 @@ public class P2PServiceImpl implements P2PService {
     }
 
     @Override
-    @Transactional
     public P2PInquiryResponse inquiry(P2PInquiryRequest request) {
         log.info("[inquiry] goldWeight={} crPhone={} memo={}", request.getGoldWeight(), request.getCrPhone(), request.getMemo());
         long start = System.currentTimeMillis();
