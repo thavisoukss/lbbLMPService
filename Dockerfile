@@ -35,7 +35,7 @@ ENV PATH="${JAVA_HOME}/bin:${PATH}"
 
 COPY --from=jre-builder /customjre $JAVA_HOME
 
-WORKDIR /usr/apps
+WORKDIR /usr/app
 
 # Config before JAR: resources change less often than code, keeping this layer cached
 RUN mkdir config_props
