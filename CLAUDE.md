@@ -14,10 +14,11 @@ the internal **m-smart** service via REST.
 - **Logging**: Log4j2 (`classpath:log4j2.xml`) with Micrometer Brave tracing
 
 ### Docs Structure
-- /docs/api/       → our controller endpoints (request/response)
-- /docs/logic/     → business flow and rules
-- /docs/external/  → external APIs we call (m-smart, cbs, etc)
-- /docs/db/        → schema / table notes
+- /docs/api/       → our controller endpoints (request/response); includes p2p and LMP controllers, error codes
+- /docs/logic/     → business flow and rules per feature (inquiry, transfer-out, p2p, QR, bio-verify)
+- /docs/external/  → external APIs we call (m-smart, cbs, minio)
+- /docs/db/        → schema / table notes; /docs/db/tables/ has per-table markdown files
+- /docs/test/      → manual curl/shell scripts for smoke-testing endpoints
 
 ---
 
@@ -65,19 +66,20 @@ log.info("<<< END logon request <<<");
 
 **What**: Every service method must log key events throughout its execution flow to support operations team debugging and monitoring.
 
-**Why**: Controllers capture entry/exit. Services hold the business logic where failures actually occur — security checks, external calls, DB writes. Without service-level key-event logs, ops cannot pinpoint which step failed or how long each step took.
+**Why**: Controllers capture entry/exit. Services hold the business logic where failures actually occur — validation, external calls, DB writes. Without service-level key-event logs, ops cannot pinpoint which step failed or how long each step took.
 
-**Required log points** (log every one, in order):
+**Required log points** (log every applicable one, in order):
 
 | Event | Level | What to include |
-|-------|-------|----------------|
-| Security verification start | `info` | `customerId` |
-| Security verification pass | `info` | `customerId` |
-| WITHDRAW_TXN loaded | `info` | `id`, `txnId` |
-| Before each external API call | `info` | key request fields (e.g. `txnId`, `amount`, `ccy`) |
+|-------|-------|-----------------|
+| Validation/security start | `info` | key identity field (`customerId`, `txnId`) |
+| Validation/security pass | `info` | same field |
+| Key state loaded from DB | `info` | entity `id` + `txnId` |
+| Before each external API call | `info` | key request fields + `elapsed_ms` so far |
 | External API success | `info` | key response fields (e.g. `cbsRefNo`, `txnId`) |
 | External API failure | `warn` | `code`, `msg` |
-| DB record updated | `info` | `id`, new status, key reference fields |
+| Unhandled exception | `error` | exception message + `txnId` |
+| DB write completed | `info` | `id`, new status, key reference fields |
 | Method completed | `info` | `txnId`, key amounts, `duration_ms` |
 
 **Example — transfer service method:**
@@ -85,12 +87,12 @@ log.info("<<< END logon request <<<");
 log.info("[transferOutAccount] verifying security questions customerId={}", customerId);
 // ... verify ...
 log.info("[transferOutAccount] security questions verified ok customerId={}", customerId);
-log.info("[transferOutAccount] loaded WITHDRAW_TXN id={} txnId={}", withdrawTxn.getId(), withdrawTxn.getTransactionId());
-log.info("[transferOutAccount] calling m-smart transfer-out txnId={} amount={} fee={} ccy={}", ...);
+log.info("[transferOutAccount] loaded withdraw txn id={} txnId={}", withdrawTxn.getId(), withdrawTxn.getTransactionId());
+log.info("[transferOutAccount] calling m-smart transfer-out txnId={} amount={} fee={} ccy={} elapsed_ms={}", txnId, amount, fee, ccy, System.currentTimeMillis() - start);
 // ... call ...
-log.info("[transferOutAccount] m-smart transfer-out success cbsRefNo={} txnId={}", ...);
-log.info("[transferOutAccount] WITHDRAW_TXN updated id={} status=COMPLETED cbsRefNo={} txnId={}", ...);
-log.info("[transferOutAccount] completed txnId={} totalAmount={} feeAmt={} cbsRefNo={} duration_ms={}", ...);
+log.info("[transferOutAccount] m-smart transfer-out success cbsRefNo={} txnId={}", cbsRefNo, txnId);
+log.info("[transferOutAccount] withdraw txn updated id={} status=COMPLETED cbsRefNo={} txnId={}", id, cbsRefNo, txnId);
+log.info("[transferOutAccount] completed txnId={} totalAmount={} feeAmt={} cbsRefNo={} duration_ms={}", txnId, totalAmount, feeAmt, cbsRefNo, System.currentTimeMillis() - start);
 ```
 
 **Tag format**: prefix every log line with `[methodName]` so grep can isolate a single flow across interleaved threads.
@@ -144,9 +146,9 @@ log.info("[transferOutAccount] completed txnId={} totalAmount={} feeAmt={} cbsRe
 **How**: Record the pattern that caused the mistake, the rule that prevents it, and review `tasks/lessons.md` at the start of each session.
 
 ### 3. Verification Before Done
-**What**: Never mark a task complete without proving it works.
-**Why**: Unverified work creates a false sense of progress and pushes debugging cost to the user.
-**How**: Run tests, check logs, and diff behavior between main and your changes. Ask: *"Would a staff engineer approve this?"*
+**What**: Never claim a change is complete without running verification and showing evidence.
+**Why**: "I edited the file" is not done. "I edited the file and here's the output" is done. "Should work now" is never acceptable — assertions require evidence.
+**How**: Run tests, check logs, and diff behavior between main and your changes. Show the output. Ask: *"Would a staff engineer approve this?"*
 
 ### 4. Demand Elegance (Balanced)
 **What**: For non-trivial changes, pause and evaluate whether a more elegant solution exists before finalizing.
@@ -162,6 +164,33 @@ log.info("[transferOutAccount] completed txnId={} totalAmount={} feeAmt={} cbsRe
 **What**: Delegate complex or isolated subtasks to subagents.
 **Why**: Subagents keep the main context window clean and allow focused execution per tech area.
 **How**: Load subagents from `.claude/agents/`. Assign one task per subagent. For complex problems, use multiple subagents in parallel.
+
+### 7. No Magic
+**What**: All assumptions must be stated explicitly. Never invent infrastructure, services, or behavior that wasn't specified.
+**Why**: Hidden assumptions in a financial middleware cause silent failures — wrong routing, phantom services, misread contracts.
+**How**: If context is missing, state the assumption before proceeding: *"I'm assuming X — correct me if wrong."* Never hallucinate config, endpoints, or DB schema.
+
+### 8. Dissent
+**What**: Before any major change, surface concerns out loud before touching code.
+**Why**: Momentum kills judgment. The questions nobody asks are the ones that cause incidents.
+**How**: For any significant change, answer these before starting:
+- What's the blast radius if this goes wrong?
+- What assumptions are we making?
+- What's the reversibility path?
+- What are we NOT seeing because of momentum?
+
+### 9. Scope Drift Detection
+**What**: Track stated goals vs actual execution. Flag scope creep immediately.
+**Why**: "Just one more thing" accumulates silently — a bug fix becomes a module rewrite without anyone deciding that.
+**How**: State the original goal at the start. If the work grows beyond it, stop and flag: *"The ask was X but we're now doing Y — is that intentional?"* Treat nice-to-haves as out-of-scope unless explicitly promoted.
+
+### 10. Reversibility (R0 / R1 / R2)
+**What**: Classify every action by reversibility before executing it.
+**Why**: Not all actions carry equal risk. The cost of pausing on an R0 is low; the cost of proceeding is potentially catastrophic.
+**How**:
+- **R0 (irreversible)** — STOP. Describe the action and ask before proceeding. Examples: dropping DB tables, force-pushing main, deleting prod data.
+- **R1 (costly to reverse)** — Proceed, but explain the reasoning. Examples: schema migrations, dependency upgrades, config changes in shared services.
+- **R2 (easily reversed)** — Just do it. Examples: editing local source files, adding logs, writing tests.
 
 ---
 
