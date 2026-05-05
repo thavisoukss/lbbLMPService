@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.*;
 
 @Slf4j
 @RestController
-@RequestMapping("/p2p")
+@RequestMapping("/payment/p2p")
 @RequiredArgsConstructor
 public class P2PController {
 

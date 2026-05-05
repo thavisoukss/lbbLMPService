@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.*;
 
 @Slf4j
 @RestController
-@RequestMapping("/lmps")
+@RequestMapping("/payment/lmps")
 @RequiredArgsConstructor
 public class LmpsController {
 
