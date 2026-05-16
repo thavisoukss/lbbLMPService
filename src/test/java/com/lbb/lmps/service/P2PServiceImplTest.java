@@ -9,9 +9,11 @@ import com.lbb.lmps.exception.ResourceNotFoundException;
 import com.lbb.lmps.remote.ApiCoreBanking;
 import com.lbb.lmps.repository.AccountRepository;
 import com.lbb.lmps.repository.CustomerRepository;
+import com.lbb.lmps.repository.P2PTxnDetailRepository;
 import com.lbb.lmps.repository.SecurityQuestionRepository;
 import com.lbb.lmps.repository.SecurityQuestionRepository.SecurityQuestionProjection;
 import com.lbb.lmps.service.impl.P2PServiceImpl;
+import com.lbb.lmps.utils.CommonInfo;
 import io.jsonwebtoken.Claims;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -30,6 +32,7 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -39,8 +42,10 @@ class P2PServiceImplTest {
     @Mock CustomerRepository customerRepository;
     @Mock AccountRepository accountRepository;
     @Mock SecurityQuestionRepository securityQuestionRepository;
+    @Mock P2PTxnDetailRepository p2pTxnDetailRepository;
     @Mock ApiCoreBanking apiCoreBanking;
     @Mock MinioStorageService minioStorageService;
+    @Mock CommonInfo commonInfo;
 
     @InjectMocks P2PServiceImpl service;
 
@@ -76,7 +81,6 @@ class P2PServiceImplTest {
 
         Customer debtor = customerWithId(DEBTOR_ID);
         Account drAccount = account("DR-001", "John Debtor", "LBI");
-
         Customer creditor = customerWithId(CREDITOR_ID);
         Account crAccount = account("CR-002", "Jane Creditor", "LBI");
 
@@ -90,12 +94,13 @@ class P2PServiceImplTest {
         when(accountRepository.findLbiCurrentByCustomerId(CREDITOR_ID)).thenReturn(Optional.of(crAccount));
         when(apiCoreBanking.getRate()).thenReturn(goldRate(new BigDecimal("100.00")));
         when(securityQuestionRepository.findByCustomerId(DEBTOR_ID)).thenReturn(List.of(q));
+        when(commonInfo.genTransactionId(anyString())).thenReturn("P2P-REF-001");
 
         P2PInquiryResponse response = service.inquiry(request);
 
         assertThat(response.getStatus()).isEqualTo("success");
         P2PInquiryResponse.P2PInquiryData data = response.getData();
-        assertThat(data.getRef()).isNotBlank();
+        assertThat(data.getRef()).isEqualTo("P2P-REF-001");
         assertThat(data.getTtl()).isEqualTo(180);
         assertThat(data.getDrAccountNo()).isEqualTo("DR-001");
         assertThat(data.getDrAccountName()).isEqualTo("John Debtor");
@@ -120,7 +125,8 @@ class P2PServiceImplTest {
 
     @Test
     void inquiry_debtorAccountNotFound_throwsResourceNotFoundException() {
-        when(customerRepository.findById(DEBTOR_ID)).thenReturn(Optional.of(customerWithId(DEBTOR_ID)));
+        Customer debtor = customerWithId(DEBTOR_ID);
+        when(customerRepository.findById(DEBTOR_ID)).thenReturn(Optional.of(debtor));
         when(accountRepository.findLbiCurrentByCustomerId(DEBTOR_ID)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> service.inquiry(requestFor(CREDITOR_PHONE)))
@@ -129,7 +135,8 @@ class P2PServiceImplTest {
 
     @Test
     void inquiry_creditorNotFound_throwsResourceNotFoundException() {
-        when(customerRepository.findById(DEBTOR_ID)).thenReturn(Optional.of(customerWithId(DEBTOR_ID)));
+        Customer debtor = customerWithId(DEBTOR_ID);
+        when(customerRepository.findById(DEBTOR_ID)).thenReturn(Optional.of(debtor));
         when(accountRepository.findLbiCurrentByCustomerId(DEBTOR_ID)).thenReturn(Optional.of(account("DR-001", "John", "LBI")));
         when(customerRepository.findByPhone(CREDITOR_PHONE)).thenReturn(Optional.empty());
 
@@ -139,9 +146,11 @@ class P2PServiceImplTest {
 
     @Test
     void inquiry_creditorAccountNotFound_throwsResourceNotFoundException() {
-        when(customerRepository.findById(DEBTOR_ID)).thenReturn(Optional.of(customerWithId(DEBTOR_ID)));
+        Customer debtor = customerWithId(DEBTOR_ID);
+        Customer creditor = customerWithId(CREDITOR_ID);
+        when(customerRepository.findById(DEBTOR_ID)).thenReturn(Optional.of(debtor));
         when(accountRepository.findLbiCurrentByCustomerId(DEBTOR_ID)).thenReturn(Optional.of(account("DR-001", "John", "LBI")));
-        when(customerRepository.findByPhone(CREDITOR_PHONE)).thenReturn(Optional.of(customerWithId(CREDITOR_ID)));
+        when(customerRepository.findByPhone(CREDITOR_PHONE)).thenReturn(Optional.of(creditor));
         when(accountRepository.findLbiCurrentByCustomerId(CREDITOR_ID)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> service.inquiry(requestFor(CREDITOR_PHONE)))

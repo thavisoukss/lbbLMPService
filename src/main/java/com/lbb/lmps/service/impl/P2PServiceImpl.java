@@ -211,7 +211,7 @@ public class P2PServiceImpl implements P2PService {
         verifySecurityAnswer(storedAnswers, request.getThirdQuestionId(), request.getThirdAnswer(), customerId, "ER_THIRD_ANSWER_INVALID");
         log.info("[transferQuotationVerify] security questions verified ok customerId={}", customerId);
 
-        // 3. Call CBS P2P transfer (MOCKUP)
+        // 3. Call CBS P2P transfer
         String transactionId = commonInfo.genTransactionId("P2P");
         log.info("[transferQuotationVerify] calling CBS p2pTransfer txnId={} goldWeight={}", transactionId, details.getGoldWeight());
         ApiCoreBanking.CbsP2PTransferResult cbsResult = apiCoreBanking.p2pTransfer(
