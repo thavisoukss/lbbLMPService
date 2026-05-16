@@ -20,7 +20,7 @@ public class P2PController {
 
     private final P2PService p2pService;
 
-    @PostMapping("/get-account-info-by-phone")
+    @GetMapping("/get-account-info-by-phone")
     public ResponseEntity<P2PAccountInfoResponse> getAccountInfoByPhone(
             @RequestBody P2PAccountInfoRequest request) {
         log.info(">>> START getAccountInfoByPhone >>>");

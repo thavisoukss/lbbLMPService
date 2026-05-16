@@ -7,7 +7,7 @@
 
 ## Endpoints
 
-### POST /get-account-info-by-phone
+### GET /get-account-info-by-phone
 Look up a P2P recipient's account details by phone number. Used by the mobile app before initiating a P2P transfer.
 
 **Headers**
