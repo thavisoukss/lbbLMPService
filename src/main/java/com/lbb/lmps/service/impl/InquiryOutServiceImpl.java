@@ -11,6 +11,7 @@ import com.lbb.lmps.remote.ApiMSmart;
 import com.lbb.lmps.repository.AccountRepository;
 import com.lbb.lmps.repository.CustomerRepository;
 import com.lbb.lmps.repository.LmpsTxnDetailRepository;
+import com.lbb.lmps.repository.ProviderRepository;
 import com.lbb.lmps.repository.SecurityQuestionRepository;
 import com.lbb.lmps.repository.WithdrawTxnRepository;
 import com.lbb.lmps.service.InquiryOutService;
@@ -44,6 +45,7 @@ public class InquiryOutServiceImpl implements InquiryOutService {
     private final SecurityQuestionRepository securityQuestionRepository;
     private final WithdrawTxnRepository withdrawTxnRepository;
     private final LmpsTxnDetailRepository lmpsTxnDetailRepository;
+    private final ProviderRepository providerRepository;
     private final CommonInfo commonInfo;
 
     @Override
@@ -60,7 +62,9 @@ public class InquiryOutServiceImpl implements InquiryOutService {
 
         CustomerContext ctx = loadCustomerContext(customerId, deviceId, userId, mobileNo, "inquiryOut");
 
-        String txnId = commonInfo.genTransactionId("");
+        String txnPrefix = fetchWithdrawTranType();
+        String txnId = commonInfo.genTransactionId(txnPrefix);
+        log.info("[inquiryOut] txnId generated txnId={} prefix={}", txnId, txnPrefix);
 
         SmartInquiryDataRequest data = new SmartInquiryDataRequest();
         data.setTxnId(txnId);
@@ -128,7 +132,9 @@ public class InquiryOutServiceImpl implements InquiryOutService {
         log.info("[inquiryOutQr] qrInfo receiverId={} memberId={}", qrInfo.getReceiverId(), qrInfo.getMemberId());
 
         // Step 2: call m-smart inquiry-out using resolved account/member from QR info
-        String txnId = commonInfo.genTransactionId("");
+        String txnPrefix = fetchWithdrawTranType();
+        String txnId = commonInfo.genTransactionId(txnPrefix);
+        log.info("[inquiryOutQr] txnId generated txnId={} prefix={}", txnId, txnPrefix);
 
         SmartInquiryDataRequest data = new SmartInquiryDataRequest();
         data.setTxnId(txnId);
@@ -231,6 +237,12 @@ public class InquiryOutServiceImpl implements InquiryOutService {
         }
         lmpsTxnDetailRepository.save(lmpsTxn);
         log.info("[saveInquiryRecord] saved LMPS_TXN_DETAIL txnId={} toType={}", data.getTxnId(), toType);
+    }
+
+    private String fetchWithdrawTranType() {
+        return providerRepository.findLmpsProviderChannel()
+                .map(ProviderRepository.LmpsProviderProjection::getTrantype)
+                .orElse("");
     }
 
     private record CustomerContext(
