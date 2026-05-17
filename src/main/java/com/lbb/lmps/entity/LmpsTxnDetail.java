@@ -6,17 +6,16 @@ import lombok.Setter;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.Objects;
 
 @Getter
 @Setter
 @Entity
-@Table(name = "WITHDRAW_TXN")
-public class WithdrawTxn {
+@Table(name = "LMPS_TXN_DETAIL")
+public class LmpsTxnDetail {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "withdrawTxnSeq")
-    @SequenceGenerator(name = "withdrawTxnSeq", sequenceName = "WITHDRAW_TXN_SEQ", allocationSize = 1)
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "lmpsTxnDetailSeq")
+    @SequenceGenerator(name = "lmpsTxnDetailSeq", sequenceName = "LMPS_TXN_DETAIL_SEQ", allocationSize = 1)
     @Column(name = "ID")
     private Long id;
 
@@ -74,10 +73,6 @@ public class WithdrawTxn {
     @Column(name = "REMARK")
     private String remark;
 
-    // TO_MEMBER — reserved for future use (store recipient member ID to skip QR info re-call on verify)
-    // @Column(name = "TO_MEMBER")
-    // private String toMember;
-
     @Column(name = "CORE_BANKING_REF")
     private String coreBankingRef;
 
@@ -88,11 +83,14 @@ public class WithdrawTxn {
     @Column(name = "VERSION", nullable = false)
     private Long version = 1L;
 
+    @Column(name = "FEE_LIST", length = 4000)
+    private String feeList;
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (!(o instanceof WithdrawTxn w)) return false;
-        return id != null && id.equals(w.id);
+        if (!(o instanceof LmpsTxnDetail d)) return false;
+        return id != null && id.equals(d.id);
     }
 
     @Override

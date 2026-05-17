@@ -3,12 +3,14 @@ package com.lbb.lmps.service.impl;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.lbb.lmps.dto.*;
 import com.lbb.lmps.dto.SmartQrInfoRequest.QrData;
+import com.lbb.lmps.entity.LmpsTxnDetail;
 import com.lbb.lmps.entity.WithdrawTxn;
 import com.lbb.lmps.exception.MSmartException;
 import com.lbb.lmps.exception.ResourceNotFoundException;
 import com.lbb.lmps.remote.ApiMSmart;
 import com.lbb.lmps.repository.AccountRepository;
 import com.lbb.lmps.repository.CustomerRepository;
+import com.lbb.lmps.repository.LmpsTxnDetailRepository;
 import com.lbb.lmps.repository.SecurityQuestionRepository;
 import com.lbb.lmps.repository.WithdrawTxnRepository;
 import com.lbb.lmps.service.InquiryOutService;
@@ -41,6 +43,7 @@ public class InquiryOutServiceImpl implements InquiryOutService {
     private final CustomerRepository customerRepository;
     private final SecurityQuestionRepository securityQuestionRepository;
     private final WithdrawTxnRepository withdrawTxnRepository;
+    private final LmpsTxnDetailRepository lmpsTxnDetailRepository;
     private final CommonInfo commonInfo;
 
     @Override
@@ -199,12 +202,35 @@ public class InquiryOutServiceImpl implements InquiryOutService {
         // For QR transfers: REMARK stores "QR" as a type marker.
         txn.setRemark("ACCOUNT".equals(toType) ? data.getTomember() : toType);
         txn.setCreatedAt(LocalDateTime.now());
-        if (data.getFeelist() != null) {
-            txn.setFeeList(mapper.writeValueAsString(data.getFeelist()));
-        }
 
         withdrawTxnRepository.save(txn);
         log.info("[saveInquiryRecord] saved WITHDRAW_TXN txnId={} toType={}", data.getTxnId(), toType);
+
+        LmpsTxnDetail lmpsTxn = new LmpsTxnDetail();
+        lmpsTxn.setPaymentChannelId(txn.getPaymentChannelId());
+        lmpsTxn.setCustomerId(txn.getCustomerId());
+        lmpsTxn.setTransactionId(txn.getTransactionId());
+        lmpsTxn.setNonce(txn.getNonce());
+        lmpsTxn.setProviderCode(txn.getProviderCode());
+        lmpsTxn.setStatus(txn.getStatus());
+        lmpsTxn.setDrAccountNo(txn.getDrAccountNo());
+        lmpsTxn.setDrCif(txn.getDrCif());
+        lmpsTxn.setCrAccountNo(txn.getCrAccountNo());
+        lmpsTxn.setDrAccountName(txn.getDrAccountName());
+        lmpsTxn.setCrAccountName(txn.getCrAccountName());
+        lmpsTxn.setAmount(txn.getAmount());
+        lmpsTxn.setFeeAmt(txn.getFeeAmt());
+        lmpsTxn.setFeeProviderAmt(txn.getFeeProviderAmt());
+        lmpsTxn.setCurrencyCode(txn.getCurrencyCode());
+        lmpsTxn.setFeeCurrencyCode(txn.getFeeCurrencyCode());
+        lmpsTxn.setFeeProviderCurrencyCode(txn.getFeeProviderCurrencyCode());
+        lmpsTxn.setRemark(txn.getRemark());
+        lmpsTxn.setCreatedAt(txn.getCreatedAt());
+        if (data.getFeelist() != null) {
+            lmpsTxn.setFeeList(mapper.writeValueAsString(data.getFeelist()));
+        }
+        lmpsTxnDetailRepository.save(lmpsTxn);
+        log.info("[saveInquiryRecord] saved LMPS_TXN_DETAIL txnId={} toType={}", data.getTxnId(), toType);
     }
 
     private record CustomerContext(

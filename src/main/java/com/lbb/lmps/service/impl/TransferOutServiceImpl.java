@@ -6,12 +6,14 @@ import org.springframework.context.MessageSource;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import com.lbb.lmps.dto.SmartQrInfoRequest.QrData;
 import com.lbb.lmps.entity.Customer;
+import com.lbb.lmps.entity.LmpsTxnDetail;
 import com.lbb.lmps.entity.WithdrawTxn;
 import com.lbb.lmps.exception.BusinessException;
 import com.lbb.lmps.exception.MSmartException;
 import com.lbb.lmps.exception.ResourceNotFoundException;
 import com.lbb.lmps.remote.ApiMSmart;
 import com.lbb.lmps.repository.CustomerRepository;
+import com.lbb.lmps.repository.LmpsTxnDetailRepository;
 import com.lbb.lmps.repository.SecurityQuestionRepository;
 import com.lbb.lmps.repository.WithdrawTxnRepository;
 import com.lbb.lmps.service.TransferOutService;
@@ -50,6 +52,7 @@ public class TransferOutServiceImpl implements TransferOutService {
     private final ObjectMapper mapper;
     private final MessageSource messageSource;
     private final WithdrawTxnRepository withdrawTxnRepository;
+    private final LmpsTxnDetailRepository lmpsTxnDetailRepository;
     private final SecurityQuestionRepository securityQuestionRepository;
     private final CustomerRepository customerRepository;
 
@@ -122,9 +125,15 @@ public class TransferOutServiceImpl implements TransferOutService {
         String memberId = qrInfoResponse.getData().getMemberId();
         log.info("[transferOutQr] qrInfo memberId={}", memberId);
 
-        // Step 3: load fee list from stored WITHDRAW_TXN snapshot
-        FeeList feeList = withdrawTxn.getFeeList() != null
-                ? mapper.readValue(withdrawTxn.getFeeList(), FeeList.class)
+        // Step 3: load fee list from LMPS_TXN_DETAIL snapshot
+        LmpsTxnDetail lmpsTxnDetail = lmpsTxnDetailRepository.findByTransactionId(withdrawTxn.getTransactionId())
+                .orElseThrow(() -> {
+                    log.warn("[transferOutQr] no LMPS_TXN_DETAIL found for txnId={}", withdrawTxn.getTransactionId());
+                    return new ResourceNotFoundException("Transaction detail not found: " + withdrawTxn.getTransactionId());
+                });
+        log.info("[transferOutQr] reading feeList from LMPS_TXN_DETAIL txnId={}", withdrawTxn.getTransactionId());
+        FeeList feeList = lmpsTxnDetail.getFeeList() != null
+                ? mapper.readValue(lmpsTxnDetail.getFeeList(), FeeList.class)
                 : new FeeList();
 
         // Step 4: calculate fee
@@ -170,14 +179,25 @@ public class TransferOutServiceImpl implements TransferOutService {
         SmartTransferOutData result = transferResponse.getData();
         log.info("[transferOutQr] m-smart transfer-out success cbsRefNo={} txnId={}", result.getCbsRefNo(), result.getTxnId());
 
-        // Step 6: update WITHDRAW_TXN with final result
+        // Step 6: update WITHDRAW_TXN and LMPS_TXN_DETAIL with final result
+        BigDecimal finalAmount = result.getTxnAmount() != null ? result.getTxnAmount() : request.getAmount();
+        BigDecimal finalFee = result.getTxnFee() != null ? result.getTxnFee() : txnFee;
+
         withdrawTxn.setStatus("COMPLETED");
-        withdrawTxn.setAmount(result.getTxnAmount() != null ? result.getTxnAmount() : request.getAmount());
-        withdrawTxn.setFeeAmt(result.getTxnFee() != null ? result.getTxnFee() : txnFee);
-        withdrawTxn.setFeeProviderAmt(result.getTxnFee() != null ? result.getTxnFee() : txnFee);
+        withdrawTxn.setAmount(finalAmount);
+        withdrawTxn.setFeeAmt(finalFee);
+        withdrawTxn.setFeeProviderAmt(finalFee);
         withdrawTxn.setCoreBankingRef(result.getCbsRefNo());
         withdrawTxnRepository.save(withdrawTxn);
         log.info("[transferOutQr] WITHDRAW_TXN updated id={} status=COMPLETED cbsRefNo={} txnId={}", withdrawTxn.getId(), result.getCbsRefNo(), withdrawTxn.getTransactionId());
+
+        lmpsTxnDetail.setStatus("COMPLETED");
+        lmpsTxnDetail.setAmount(finalAmount);
+        lmpsTxnDetail.setFeeAmt(finalFee);
+        lmpsTxnDetail.setFeeProviderAmt(finalFee);
+        lmpsTxnDetail.setCoreBankingRef(result.getCbsRefNo());
+        lmpsTxnDetailRepository.save(lmpsTxnDetail);
+        log.info("[transferOutQr] LMPS_TXN_DETAIL updated id={} status=COMPLETED cbsRefNo={} txnId={}", lmpsTxnDetail.getId(), result.getCbsRefNo(), withdrawTxn.getTransactionId());
 
         // Step 7: build response
         TransferOutQrResponse response = new TransferOutQrResponse();
@@ -244,9 +264,15 @@ public class TransferOutServiceImpl implements TransferOutService {
         // toMember was stored in REMARK at inquiry time
         String toMember = withdrawTxn.getRemark();
 
-        // Calculate fee from stored snapshot
-        FeeList feeList = withdrawTxn.getFeeList() != null
-                ? mapper.readValue(withdrawTxn.getFeeList(), FeeList.class)
+        // Calculate fee from LMPS_TXN_DETAIL snapshot
+        LmpsTxnDetail lmpsTxnDetail = lmpsTxnDetailRepository.findByTransactionId(withdrawTxn.getTransactionId())
+                .orElseThrow(() -> {
+                    log.warn("[transferOutAccount] no LMPS_TXN_DETAIL found for txnId={}", withdrawTxn.getTransactionId());
+                    return new ResourceNotFoundException("Transaction detail not found: " + withdrawTxn.getTransactionId());
+                });
+        log.info("[transferOutAccount] reading feeList from LMPS_TXN_DETAIL txnId={}", withdrawTxn.getTransactionId());
+        FeeList feeList = lmpsTxnDetail.getFeeList() != null
+                ? mapper.readValue(lmpsTxnDetail.getFeeList(), FeeList.class)
                 : new FeeList();
         BigDecimal txnFee = calculateFee(feeList, request.getAmount(), withdrawTxn.getCurrencyCode());
         log.info("[transferOutAccount] txnFee={} amount={} ccy={}", txnFee, request.getAmount(), withdrawTxn.getCurrencyCode());
@@ -295,14 +321,25 @@ public class TransferOutServiceImpl implements TransferOutService {
         SmartTransferOutData result = transferResponse.getData();
         log.info("[transferOutAccount] m-smart transfer-out success cbsRefNo={} txnId={}", result.getCbsRefNo(), result.getTxnId());
 
-        // Update WITHDRAW_TXN
+        // Update WITHDRAW_TXN and LMPS_TXN_DETAIL
+        BigDecimal finalAmount = result.getTxnAmount() != null ? result.getTxnAmount() : request.getAmount();
+        BigDecimal finalFee = result.getTxnFee() != null ? result.getTxnFee() : txnFee;
+
         withdrawTxn.setStatus("COMPLETED");
-        withdrawTxn.setAmount(result.getTxnAmount() != null ? result.getTxnAmount() : request.getAmount());
-        withdrawTxn.setFeeAmt(result.getTxnFee() != null ? result.getTxnFee() : txnFee);
-        withdrawTxn.setFeeProviderAmt(result.getTxnFee() != null ? result.getTxnFee() : txnFee);
+        withdrawTxn.setAmount(finalAmount);
+        withdrawTxn.setFeeAmt(finalFee);
+        withdrawTxn.setFeeProviderAmt(finalFee);
         withdrawTxn.setCoreBankingRef(result.getCbsRefNo());
         withdrawTxnRepository.save(withdrawTxn);
         log.info("[transferOutAccount] WITHDRAW_TXN updated id={} status=COMPLETED cbsRefNo={} txnId={}", withdrawTxn.getId(), result.getCbsRefNo(), withdrawTxn.getTransactionId());
+
+        lmpsTxnDetail.setStatus("COMPLETED");
+        lmpsTxnDetail.setAmount(finalAmount);
+        lmpsTxnDetail.setFeeAmt(finalFee);
+        lmpsTxnDetail.setFeeProviderAmt(finalFee);
+        lmpsTxnDetail.setCoreBankingRef(result.getCbsRefNo());
+        lmpsTxnDetailRepository.save(lmpsTxnDetail);
+        log.info("[transferOutAccount] LMPS_TXN_DETAIL updated id={} status=COMPLETED cbsRefNo={} txnId={}", lmpsTxnDetail.getId(), result.getCbsRefNo(), withdrawTxn.getTransactionId());
 
         TransferOutQrResponse response = new TransferOutQrResponse();
         response.setTransactionId(result.getTxnId());
@@ -390,9 +427,15 @@ public class TransferOutServiceImpl implements TransferOutService {
         String memberId = qrInfoResponse.getData().getMemberId();
         log.info("[transferOutQrBio] qrInfo memberId={}", memberId);
 
-        // Calculate fee from stored WITHDRAW_TXN snapshot
-        FeeList feeList = withdrawTxn.getFeeList() != null
-                ? mapper.readValue(withdrawTxn.getFeeList(), FeeList.class)
+        // Calculate fee from LMPS_TXN_DETAIL snapshot
+        LmpsTxnDetail lmpsTxnDetail = lmpsTxnDetailRepository.findByTransactionId(withdrawTxn.getTransactionId())
+                .orElseThrow(() -> {
+                    log.warn("[transferOutQrBio] no LMPS_TXN_DETAIL found for txnId={}", withdrawTxn.getTransactionId());
+                    return new ResourceNotFoundException("Transaction detail not found: " + withdrawTxn.getTransactionId());
+                });
+        log.info("[transferOutQrBio] reading feeList from LMPS_TXN_DETAIL txnId={}", withdrawTxn.getTransactionId());
+        FeeList feeList = lmpsTxnDetail.getFeeList() != null
+                ? mapper.readValue(lmpsTxnDetail.getFeeList(), FeeList.class)
                 : new FeeList();
         BigDecimal txnFee = calculateFee(feeList, request.getAmount(), withdrawTxn.getCurrencyCode());
         log.info("[transferOutQrBio] txnFee={} amount={} ccy={}", txnFee, request.getAmount(), withdrawTxn.getCurrencyCode());
@@ -436,14 +479,25 @@ public class TransferOutServiceImpl implements TransferOutService {
         SmartTransferOutData result = transferResponse.getData();
         log.info("[transferOutQrBio] m-smart transfer-out success cbsRefNo={} txnId={}", result.getCbsRefNo(), result.getTxnId());
 
-        // Update WITHDRAW_TXN
+        // Update WITHDRAW_TXN and LMPS_TXN_DETAIL
+        BigDecimal finalAmount = result.getTxnAmount() != null ? result.getTxnAmount() : request.getAmount();
+        BigDecimal finalFee = result.getTxnFee() != null ? result.getTxnFee() : txnFee;
+
         withdrawTxn.setStatus("COMPLETED");
-        withdrawTxn.setAmount(result.getTxnAmount() != null ? result.getTxnAmount() : request.getAmount());
-        withdrawTxn.setFeeAmt(result.getTxnFee() != null ? result.getTxnFee() : txnFee);
-        withdrawTxn.setFeeProviderAmt(result.getTxnFee() != null ? result.getTxnFee() : txnFee);
+        withdrawTxn.setAmount(finalAmount);
+        withdrawTxn.setFeeAmt(finalFee);
+        withdrawTxn.setFeeProviderAmt(finalFee);
         withdrawTxn.setCoreBankingRef(result.getCbsRefNo());
         withdrawTxnRepository.save(withdrawTxn);
         log.info("[transferOutQrBio] WITHDRAW_TXN updated id={} status=COMPLETED cbsRefNo={} txnId={}", withdrawTxn.getId(), result.getCbsRefNo(), withdrawTxn.getTransactionId());
+
+        lmpsTxnDetail.setStatus("COMPLETED");
+        lmpsTxnDetail.setAmount(finalAmount);
+        lmpsTxnDetail.setFeeAmt(finalFee);
+        lmpsTxnDetail.setFeeProviderAmt(finalFee);
+        lmpsTxnDetail.setCoreBankingRef(result.getCbsRefNo());
+        lmpsTxnDetailRepository.save(lmpsTxnDetail);
+        log.info("[transferOutQrBio] LMPS_TXN_DETAIL updated id={} status=COMPLETED cbsRefNo={} txnId={}", lmpsTxnDetail.getId(), result.getCbsRefNo(), withdrawTxn.getTransactionId());
 
         TransferOutQrResponse response = new TransferOutQrResponse();
         response.setTransactionId(result.getTxnId());
