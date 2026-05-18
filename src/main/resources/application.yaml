@@ -25,3 +25,5 @@ external:
       path-root: /api/corebanking
       path-getrate: /getRate
       path-p2p-transfer: /internalTransfer
+    notification:
+      path: /lbb-customer-api/v1/lmpt-callback

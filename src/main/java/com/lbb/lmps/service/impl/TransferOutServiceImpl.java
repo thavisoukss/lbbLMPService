@@ -12,6 +12,7 @@ import com.lbb.lmps.exception.BusinessException;
 import com.lbb.lmps.exception.MSmartException;
 import com.lbb.lmps.exception.ResourceNotFoundException;
 import com.lbb.lmps.remote.ApiMSmart;
+import com.lbb.lmps.remote.ApiNotification;
 import com.lbb.lmps.repository.CustomerRepository;
 import com.lbb.lmps.repository.LmpsTxnDetailRepository;
 import com.lbb.lmps.repository.SecurityQuestionRepository;
@@ -49,6 +50,7 @@ public class TransferOutServiceImpl implements TransferOutService {
     private static final BCryptPasswordEncoder PASSWORD_ENCODER = new BCryptPasswordEncoder(12);
 
     private final ApiMSmart apiMSmart;
+    private final ApiNotification apiNotification;
     private final ObjectMapper mapper;
     private final MessageSource messageSource;
     private final WithdrawTxnRepository withdrawTxnRepository;
@@ -199,6 +201,15 @@ public class TransferOutServiceImpl implements TransferOutService {
         lmpsTxnDetailRepository.save(lmpsTxnDetail);
         log.info("[transferOutQr] LMPS_TXN_DETAIL updated id={} status=COMPLETED cbsRefNo={} txnId={}", lmpsTxnDetail.getId(), result.getCbsRefNo(), withdrawTxn.getTransactionId());
 
+        // Send push notification — non-fatal
+        try {
+            String desc = String.format("ທ່ານໄດ້ໂອນເງີນ - %.2f %s You have successfully transferred", finalAmount, withdrawTxn.getCurrencyCode());
+            apiNotification.send("Withdraw", desc, mobileNo);
+            log.info("[transferOutQr] notification sent txnId={}", withdrawTxn.getTransactionId());
+        } catch (Exception e) {
+            log.warn("[transferOutQr] notification failed, continuing txnId={} error={}", withdrawTxn.getTransactionId(), e.getMessage());
+        }
+
         // Step 7: build response
         TransferOutQrResponse response = new TransferOutQrResponse();
         response.setTransactionId(result.getTxnId());
@@ -340,6 +351,15 @@ public class TransferOutServiceImpl implements TransferOutService {
         lmpsTxnDetail.setCoreBankingRef(result.getCbsRefNo());
         lmpsTxnDetailRepository.save(lmpsTxnDetail);
         log.info("[transferOutAccount] LMPS_TXN_DETAIL updated id={} status=COMPLETED cbsRefNo={} txnId={}", lmpsTxnDetail.getId(), result.getCbsRefNo(), withdrawTxn.getTransactionId());
+
+        // Send push notification — non-fatal
+        try {
+            String desc = String.format("ທ່ານໄດ້ໂອນເງີນ - %.2f %s You have successfully transferred", finalAmount, withdrawTxn.getCurrencyCode());
+            apiNotification.send("Withdraw", desc, mobileNo);
+            log.info("[transferOutAccount] notification sent txnId={}", withdrawTxn.getTransactionId());
+        } catch (Exception e) {
+            log.warn("[transferOutAccount] notification failed, continuing txnId={} error={}", withdrawTxn.getTransactionId(), e.getMessage());
+        }
 
         TransferOutQrResponse response = new TransferOutQrResponse();
         response.setTransactionId(result.getTxnId());
