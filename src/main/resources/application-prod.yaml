@@ -6,9 +6,9 @@ spring:
 
 
 
-    url: jdbc:oracle:thin:@//172.16.4.79:1521/cdbmbuat.lbb.local
-    username: mb_uat
-    password: qwertyui
+    url: jdbc:oracle:thin:@//172.16.0.79:1521/LBBPRODMB.lbb.local
+    username: MBOWNER
+    password: Pa##w0rdHero%>25
     driver-class-name: oracle.jdbc.OracleDriver
   jpa:
     database-platform: org.hibernate.dialect.OracleDialect
