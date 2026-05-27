@@ -10,7 +10,7 @@ import java.time.LocalDateTime;
 @Getter
 @Setter
 @Entity
-@Table(name = "LMPS_TXN_DETAIL")
+@Table(name = "LMPS_TXN_DETAIL", schema = "LMPS_SCHEMA")
 public class LmpsTxnDetail {
 
     @Id

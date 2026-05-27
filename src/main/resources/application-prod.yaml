@@ -13,6 +13,14 @@ spring:
   jpa:
     database-platform: org.hibernate.dialect.OracleDialect
     show-sql: false
+    properties:
+      hibernate:
+        default_schema: MBLBB
+    hibernate:
+      ddl-auto: update
+
+app:
+  mbowner-schema: MBOWNER
 external:
   api:
     client:
@@ -21,7 +29,7 @@ external:
     core-banking:
       url: http://corebanking-service:8082
     m-smart:
-      url: http://172.16.4.18:7001
+      url: http://172.16.0.48:7001
     notification:
       url: http://172.16.0.40:2565
       api-key: A3STRPQFKB2C4JX588
