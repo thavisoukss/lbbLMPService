@@ -1,25 +1,44 @@
 
 server:
   port: 8084
-baseurl: /api/lmps
-#spring:
-#  datasource:
-#    continue-on-error: true # ໃຫ້ເຮັດວຽກຕໍ່ເຖິງຈະມີ Error ຕອນ Init DB
-#    url: jdbc:oracle:thin:@//localhost:1521/xe
-#    username: myuser
-#    password: mypassword
-#    driver-class-name: oracle.jdbc.OracleDriver
-#  jpa:
-#    database-platform: org.hibernate.dialect.Oracle12cDialect
-#    show-sql: true
+spring:
+  datasource:
+
+
+
+    url: jdbc:oracle:thin:@//172.16.0.79:1521/LBBPRODMB.lbb.local
+    username: MBOWNER
+    password: Pa##w0rdHero%>25
+    driver-class-name: oracle.jdbc.OracleDriver
+  jpa:
+    database-platform: org.hibernate.dialect.OracleDialect
+    show-sql: false
+    properties:
+      hibernate:
+        default_schema: MBLBB
+    hibernate:
+      ddl-auto: update
+
+app:
+  mbowner-schema: MBOWNER
 external:
   api:
     client:
       connect-timeout: 5000
       read-timeout: 10000
-# ການຕັ້ງຄ່າ Log4j2
-logging:
-  config: classpath:log4j2.xml
+    core-banking:
+      url: http://corebanking-service:8082
+    m-smart:
+      url: http://172.16.0.48:7001
+    notification:
+      url: http://172.16.0.40:2565
+      api-key: A3STRPQFKB2C4JX588
+
+minio:
+  endpoint: https://s3-uat.laobullionbank.com
+  access-key: admin_iquri
+  secret-key: admin@iquri@2025
+  bucket: lbb-mb-uat
 
 management:
   tracing:

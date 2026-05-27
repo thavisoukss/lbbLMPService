@@ -1,10 +1,29 @@
 spring:
+  application:
+    name: lbb-lmps
   profiles:
-    active: dev
-logging:
-  config: classpath:log4j2.xml
+    active: prod
 
+server:
+  servlet:
+    context-path: /
 management:
   tracing:
     sampling:
       probability: 1.0  # ເກັບ Trace ທຸກ Request (ຖ້າໃຊ້ໃນ Production ຕົວຈິງອາດຈະປັບເປັນ 0.1)
+
+external:
+  api:
+    m-smart:
+      path-root: /m-smart
+      path-member-list: /lmps/member/list
+      path-inq-out: /lmps/out/inquiry/register
+      path-trf-out: /lmps/out/transfer
+      path-build-qr: /qr/generate
+      path-qr-info: /qr/info
+    cbs:
+      path-root: /api/corebanking
+      path-getrate: /getRate
+      path-p2p-transfer: /internalTransfer
+    notification:
+      path: /lbb-customer-api/v1/lmpt-callback

@@ -1,0 +1,46 @@
+
+server:
+  port: 8084
+spring:
+  datasource:
+#    url: jdbc:oracle:thin:@//172.16.4.79:1521/LBBMBUAT02.lbb.local
+#    username: admin_mbuat
+#    password: Admin123##
+    url: jdbc:oracle:thin:@//172.16.4.79:1521/cdbmbuat.lbb.local
+    username: mb_uat
+    password: qwertyui
+    driver-class-name: oracle.jdbc.OracleDriver
+  jpa:
+    database-platform: org.hibernate.dialect.OracleDialect
+    show-sql: true
+    properties:
+      hibernate:
+        default_schema: mb_uat
+    hibernate:
+      ddl-auto: update
+
+app:
+  mbowner-schema: mb_uat
+external:
+  api:
+    client:
+      connect-timeout: 5000
+      read-timeout: 10000
+    core-banking:
+      url: https://uatapiv2.laobullionbank.com:8899
+    m-smart:
+      url: http://172.16.4.18:7001
+    notification:
+      url: http://172.16.4.40:2565
+      api-key: A3STRPQFKB2C4JX588
+
+minio:
+  endpoint: https://s3-uat.laobullionbank.com
+  access-key: admin_iquri
+  secret-key: admin@iquri@2025
+  bucket: lbb-mb-uat
+
+management:
+  tracing:
+    sampling:
+      probability: 1.0  # ເກັບ Trace ທຸກ Request (ຖ້າໃຊ້ໃນ Production ຕົວຈິງອາດຈະປັບເປັນ 0.1)
