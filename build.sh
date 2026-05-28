@@ -43,9 +43,10 @@ HOST_ARCH=$(uname -m)
 DEFAULT_PLATFORM=$([ "$HOST_ARCH" = "arm64" ] && echo "linux/arm64" || echo "linux/amd64")
 PLATFORM="${2:-$DEFAULT_PLATFORM}"
 
-# uat/prod must always target the x86 registry server
-if [[ "$ENV" == "uat" || "$ENV" == "prod" ]] && [[ "$PLATFORM" != "linux/amd64" ]]; then
-  info "Forcing linux/amd64 for ${ENV} (registry server is x86)"
+# uat/prod defaults to linux/amd64 since the registry/prod servers are x86,
+# but can be explicitly overridden via $2.
+if [[ "$ENV" == "uat" || "$ENV" == "prod" ]] && [[ -z "${2:-}" ]] && [[ "$PLATFORM" != "linux/amd64" ]]; then
+  info "Forcing default linux/amd64 for ${ENV} (registry/prod server is x86)"
   PLATFORM="linux/amd64"
 fi
 
@@ -65,8 +66,8 @@ case "$ENV" in
     TAG="${REGISTRY}:dev-${SHORT_HASH}"
     ;;
   prod)
-    VERSION=$(git describe --tags --abbrev=0 2>/dev/null) \
-      || error "No git tag found. Tag a commit first: git tag v1.0.0"
+    VERSION=$(git describe --tags --abbrev=0 2>/dev/null || git tag --sort=-v:refname | head -n 1)
+    [[ -n "$VERSION" ]] || error "No git tag found. Tag a commit first: git tag v1.0.0"
     TAG="${REGISTRY}:${VERSION}"
     # Prompt for confirmation to prevent accidental prod deployments
     read -rp "Push ${TAG} to PRODUCTION? [y/N] " confirm
@@ -101,4 +102,4 @@ docker build --platform "$PLATFORM" -f Dockerfile -t "$TAG" .
 info "Docker push → registry"
 docker push "$TAG"
 
-success "✓ Build & push co/skmpleted: ${TAG}"
+success "✓ Build & push completed: ${TAG}"
