@@ -27,7 +27,7 @@ external:
       connect-timeout: 5000
       read-timeout: 10000
     core-banking:
-      url: http://corebanking-service:8082
+      url: http://172.16.0.43:8082
     m-smart:
       url: http://172.16.0.48:7001
     notification:
