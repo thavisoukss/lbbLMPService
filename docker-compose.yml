@@ -8,12 +8,20 @@ services:
     environment:
       SPRING_PROFILES_ACTIVE: "prod"
       TZ: "Asia/Bangkok"
+      # Secure Production Key Injection Options:
+      # Option A: Inject private key content directly as environment variable
+      # JWT_PRIVATE_KEY: "-----BEGIN PRIVATE KEY-----\nMIIEvg...\n-----END PRIVATE KEY-----"
+      #
+      # Option B: Point to a securely mounted file path
+      # JWT_PRIVATE_KEY_PATH: "/config/keys/prod-private.pem"
     deploy:
       replicas: 1
       restart_policy:
         condition: on-failure
     volumes:
       - lmps_payment_logs:/usr/app/logs
+      # If using Option B, mount the key file securely (read-only):
+      # - /path/to/host/prod-private.pem:/config/keys/prod-private.pem:ro
     networks:
       - lbb_network
 
