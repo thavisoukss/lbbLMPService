@@ -58,8 +58,10 @@ fi
 # ─────────────────────────────────────────────
 case "$ENV" in
   dev)
+    # Get current branch name, replace slashes with hyphens, and convert to lowercase
+    BRANCH_NAME=$(git rev-parse --abbrev-ref HEAD | sed 's/\//-/g' | tr '[:upper:]' '[:lower:]')
     SHORT_HASH=$(git rev-parse --short HEAD)
-    TAG="${REGISTRY}:dev-${SHORT_HASH}"
+    TAG="${REGISTRY}:dev-${BRANCH_NAME}-${SHORT_HASH}"
     ;;
   uat)
     SHORT_HASH=$(git rev-parse --short HEAD)
