@@ -64,8 +64,9 @@ case "$ENV" in
     TAG="${REGISTRY}:dev-${BRANCH_NAME}-${SHORT_HASH}"
     ;;
   uat)
-    # Get the current release tag or fallback to v0.0.0
-    VERSION=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
+    # Get the current release tag or fallback to latest tag globally
+    VERSION=$(git describe --tags --abbrev=0 2>/dev/null || git tag --sort=-v:refname | head -n 1)
+    [[ -n "$VERSION" ]] || VERSION="v0.0.0"
     SHORT_HASH=$(git rev-parse --short HEAD)
     TAG="${REGISTRY}:${VERSION}-rc-${SHORT_HASH}"
     ;;
