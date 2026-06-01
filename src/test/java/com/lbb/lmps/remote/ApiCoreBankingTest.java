@@ -96,7 +96,7 @@ class ApiCoreBankingTest {
         doReturn(bodySpec).when(postSpec).uri(anyString());
         doReturn(bodySpec).when(bodySpec).body(any(Object.class));
         doReturn(responseSpec).when(bodySpec).retrieve();
-        doThrow(new RuntimeException("Connection refused")).when(responseSpec).body(CbsInternalTransferResponse.class);
+        doThrow(new RuntimeException("Connection refused")).when(responseSpec).body(String.class);
 
         assertThatThrownBy(() -> apiCoreBanking.p2pTransfer(
                 "TXN-001", "CUST-001", "DR-ACCT-001", "CR-ACCT-002",
@@ -114,6 +114,11 @@ class ApiCoreBankingTest {
         doReturn(bodySpec).when(postSpec).uri(anyString());
         doReturn(bodySpec).when(bodySpec).body(any(Object.class));
         doReturn(responseSpec).when(bodySpec).retrieve();
-        doReturn(response).when(responseSpec).body(CbsInternalTransferResponse.class);
+        try {
+            String json = new ObjectMapper().writeValueAsString(response);
+            doReturn(json).when(responseSpec).body(String.class);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 }

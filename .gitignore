@@ -34,3 +34,9 @@ build/
 .mcp.json
 /.claude/settings.local.json
 /logs/
+
+### Keys ###
+# Ignore all private key files to prevent accidental commits
+*private.pem
+# Explicitly allow UAT private key for default local testing
+!uat-private.pem
