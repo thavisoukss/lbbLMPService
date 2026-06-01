@@ -9,8 +9,13 @@ services:
       SPRING_PROFILES_ACTIVE: "prod"
       TZ: "Asia/Bangkok"
       # Secure Production Key Injection Options:
-      # Option A: Inject private key content directly as environment variable
-      # JWT_PRIVATE_KEY: "-----BEGIN PRIVATE KEY-----\nMIIEvg...\n-----END PRIVATE KEY-----"
+      # Option A: Inject private key content directly as environment variable (YAML multiline format)
+      # JWT_PRIVATE_KEY: |
+      #   -----BEGIN PRIVATE KEY-----
+      #   MIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQDXpAiTGnQc+Gu1
+      #   XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+      #   JpuD5YKYzChdA5fk3hFQ8NQz
+      #   -----END PRIVATE KEY-----
       #
       # Option B: Point to a securely mounted file path
       # JWT_PRIVATE_KEY_PATH: "/config/keys/prod-private.pem"
