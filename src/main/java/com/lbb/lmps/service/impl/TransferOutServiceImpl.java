@@ -11,6 +11,7 @@ import com.lbb.lmps.entity.WithdrawTxn;
 import com.lbb.lmps.exception.BusinessException;
 import com.lbb.lmps.exception.MSmartException;
 import com.lbb.lmps.exception.ResourceNotFoundException;
+import com.lbb.lmps.exception.SecurityQuestionException;
 import com.lbb.lmps.remote.ApiMSmart;
 import com.lbb.lmps.remote.ApiNotification;
 import com.lbb.lmps.repository.CustomerRepository;
@@ -571,7 +572,7 @@ public class TransferOutServiceImpl implements TransferOutService {
         if (hash == null || !PASSWORD_ENCODER.matches(answer, hash)) {
             log.warn("[{}] security question failed customerId={} questionId={} errorCode={}", logTag, customerId, questionId, errorCode);
             String msg = messageSource.getMessage("error." + errorCode + ".message", null, LocaleContextHolder.getLocale());
-            throw new BusinessException(errorCode, msg);
+            throw new SecurityQuestionException(errorCode, msg);
         }
     }
 

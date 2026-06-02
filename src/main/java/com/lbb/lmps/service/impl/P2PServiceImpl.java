@@ -6,6 +6,7 @@ import com.lbb.lmps.entity.Customer;
 import com.lbb.lmps.entity.P2PTxnDetail;
 import com.lbb.lmps.exception.BusinessException;
 import com.lbb.lmps.exception.ResourceNotFoundException;
+import com.lbb.lmps.exception.SecurityQuestionException;
 import com.lbb.lmps.remote.ApiCoreBanking;
 import com.lbb.lmps.repository.AccountRepository;
 import com.lbb.lmps.repository.CustomerRepository;
@@ -261,7 +262,7 @@ public class P2PServiceImpl implements P2PService {
         if (hash == null || !PASSWORD_ENCODER.matches(answer, hash)) {
             log.warn("[transferQuotationVerify] security question failed customerId={} questionId={} errorCode={}",
                     customerId, questionId, errorCode);
-            throw new BusinessException(errorCode, "Security answer is incorrect");
+            throw new SecurityQuestionException(errorCode, "Security answer is incorrect");
         }
     }
 }

@@ -53,6 +53,16 @@ public class GlobalExceptionHandler {
         );
     }
 
+    @ExceptionHandler(SecurityQuestionException.class)
+    public ResponseEntity<?> handleSecurityQuestion(SecurityQuestionException e) {
+        log.warn("Exception handled: status=400 code={} message={}", e.getCode(), e.getMessage());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
+                Map.of("status", "error",
+                       "error", Map.of("code", e.getCode()),
+                       "message", e.getMessage())
+        );
+    }
+
     @ExceptionHandler(BusinessException.class)
     public ResponseEntity<?> handleBusiness(BusinessException e) {
         log.warn("Exception handled: status=200 code={} message={}", e.getCode(), e.getMessage());
