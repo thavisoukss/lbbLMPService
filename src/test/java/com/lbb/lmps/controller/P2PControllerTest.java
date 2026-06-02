@@ -36,7 +36,7 @@ class P2PControllerTest {
     void inquiry_returns200_withSuccessBody() throws Exception {
         when(p2pService.inquiry(any())).thenReturn(successResponse());
 
-        mockMvc.perform(post("/p2p/inquiry")
+        mockMvc.perform(post("/payment/p2p/inquiry")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(inquiryRequest())))
                 .andExpect(status().isOk())
@@ -55,7 +55,7 @@ class P2PControllerTest {
         when(p2pService.inquiry(any()))
                 .thenThrow(new ResourceNotFoundException("Creditor not found"));
 
-        mockMvc.perform(post("/p2p/inquiry")
+        mockMvc.perform(post("/payment/p2p/inquiry")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(inquiryRequest())))
                 .andExpect(status().isNotFound())
