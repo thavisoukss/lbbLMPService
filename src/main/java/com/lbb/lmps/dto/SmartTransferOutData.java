@@ -24,4 +24,12 @@ public class SmartTransferOutData {
     private String toCif;
     private String toType;
     private String toMemberId;
+
+    public void setTxnAmount(BigDecimal txnAmount) {
+        this.txnAmount = txnAmount != null ? txnAmount.setScale(0, java.math.RoundingMode.DOWN) : null;
+    }
+
+    public void setTxnFee(BigDecimal txnFee) {
+        this.txnFee = txnFee != null ? txnFee.setScale(0, java.math.RoundingMode.DOWN) : null;
+    }
 }
