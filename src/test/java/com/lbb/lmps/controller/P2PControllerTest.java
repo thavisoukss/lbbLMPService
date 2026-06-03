@@ -63,6 +63,20 @@ class P2PControllerTest {
                 .andExpect(jsonPath("$.error.code").value("RESOURCE_NOT_FOUND"));
     }
 
+    @Test
+    void inquiry_returns400_whenInvalidSecurityQuestion() throws Exception {
+        when(p2pService.inquiry(any()))
+                .thenThrow(new com.lbb.lmps.exception.SecurityQuestionException("ER_FIRST_ANSWER_INVALID", "Security answer is incorrect"));
+
+        mockMvc.perform(post("/payment/p2p/inquiry")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(inquiryRequest())))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value("error"))
+                .andExpect(jsonPath("$.error.code").value("ER_FIRST_ANSWER_INVALID"))
+                .andExpect(jsonPath("$.message").value("Security answer is incorrect"));
+    }
+
     // --- helpers ---
 
     private P2PInquiryRequest inquiryRequest() {
