@@ -20,6 +20,24 @@ This guide describes how to generate biometric secrets and cryptographic signatu
 
 ---
 
+## 1.5 Generating a New Key Pair
+
+To generate a new RSA key pair for biometric verification:
+
+1. **Generate the private key (2048-bit RSA):**
+   ```bash
+   openssl genrsa -out private_key.pem 2048
+   ```
+
+2. **Derive the public key in PKIX/X.509 format (PEM):**
+   ```bash
+   openssl rsa -pubout -in private_key.pem -out public_key.pem
+   ```
+
+The contents of `public_key.pem` can then be stored in the database's `CUSTOMER.BIO_KEY` column.
+
+---
+
 ## 2. Generation Commands
 
 The script supports the `--env` flag, which automatically configures the correct private key, public key, and default phone number for the environment.
