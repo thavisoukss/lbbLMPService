@@ -14,20 +14,31 @@ DEFAULT_PUBLIC_KEY = "src/main/resources/keys/uat-public.pem"
 
 def main():
     parser = argparse.ArgumentParser(description="Generate Biometric signature and secret for LBB Plus Transaction.")
-    parser.add_argument("--phone", default="2097778968", help="User phone number (default: 2097778968)")
+    parser.add_argument("--phone", help="User phone number (default: 2097778968 for UAT, 2059366665 for Prod)")
     parser.add_argument("--secret", help="Biometric secret (default: auto-generated)")
     parser.add_argument("--nonce", default="x_nonce_placeholder", help="Transaction x_nonce (default: x_nonce_placeholder)")
     parser.add_argument("--amount", default="100000", help="Transaction amount (default: 100000)")
     parser.add_argument("--qr", default="00020101021226580011hk.com.bualuang.qr0108101416450208123456785204531153037645802LA", help="QR string for the transaction")
     parser.add_argument("--customer-id", default="CUST001", help="Customer ID for SQL statement generation")
     parser.add_argument("--purpose", default="Biometric Test Transfer", help="Purpose of transaction")
-    parser.add_argument("--private-key", default=DEFAULT_PRIVATE_KEY, help=f"Path to private key PEM file (default: {DEFAULT_PRIVATE_KEY})")
-    parser.add_argument("--public-key", default=DEFAULT_PUBLIC_KEY, help=f"Path to public key PEM file (default: {DEFAULT_PUBLIC_KEY})")
+    parser.add_argument("--private-key", help="Path to private key PEM file")
+    parser.add_argument("--public-key", help="Path to public key PEM file")
     parser.add_argument("--timestamp", help="Biometric timestamp (default: current epoch seconds)")
+    parser.add_argument("--env", default="uat", choices=["uat", "prod"], help="Environment: uat or prod (default: uat)")
     args = parser.parse_args()
 
-    private_key_file = args.private_key
-    public_key_file = args.public_key
+    # Determine default configuration based on environment
+    if args.env == "prod":
+        default_private = "/Users/nohder/Library/CloudStorage/GoogleDrive-noh.sayachack@gmail.com/My Drive/obsidian/NohDer/01-Projects/_personal/lbbplus/pro-private.pem"
+        default_public = "src/main/resources/keys/prod-public.pem"
+        default_phone = "2059366665"
+    else:
+        default_private = "src/main/resources/keys/uat-private.pem"
+        default_public = "src/main/resources/keys/uat-public.pem"
+        default_phone = "2097778968"
+
+    private_key_file = args.private_key if args.private_key else default_private
+    public_key_file = args.public_key if args.public_key else default_public
 
     # 1. Generate/verify keys
     if not os.path.exists(private_key_file):
@@ -62,9 +73,13 @@ def main():
         public_key_pem = f.read().strip()
 
     # 3. Prepare variables
-    timestamp = args.timestamp if args.timestamp else str(int(time.time()))
+    if args.timestamp:
+        timestamp = args.timestamp
+    else:
+        from datetime import datetime, timezone
+        timestamp = datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%S.%f')[:-3] + 'Z'
     secret = args.secret if args.secret else secrets.token_hex(16)
-    phone = args.phone
+    phone = args.phone if args.phone else default_phone
     
     # 4. Construct payload
     payload = f"{timestamp}|{phone}|{secret}"

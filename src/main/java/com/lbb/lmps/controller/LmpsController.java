@@ -121,6 +121,22 @@ public class LmpsController {
         }
     }
 
+    @PostMapping("/transfer-out-account-bio-verify")
+    public ResponseEntity<TransferOutQrResponse> transferOutAccountBioVerify(
+            @RequestHeader("Device-ID") String deviceId,
+            @Valid @RequestBody TransferOutAccountBioRequest request) throws Exception {
+        log.info(">>> START transferOutAccountBioVerify >>>");
+        log.info("> request body: {}", request);
+        long start = System.currentTimeMillis();
+        try {
+            TransferOutQrResponse finalResponse = transferOutService.transferOutAccountBio(request, deviceId);
+            log.info("< Final response: {} | duration_ms={}", finalResponse, System.currentTimeMillis() - start);
+            return ResponseEntity.ok(finalResponse);
+        } finally {
+            log.info("<<< END transferOutAccountBioVerify request <<<");
+        }
+    }
+
     @PostMapping("/transfer-out-qr-quotation-verify")
     public ResponseEntity<TransferOutQrResponse> transferOutQrQuotationVerify(
             @RequestHeader("Device-ID") String deviceId,
