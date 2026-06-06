@@ -520,6 +520,15 @@ public class TransferOutServiceImpl implements TransferOutService {
         lmpsTxnDetailRepository.save(lmpsTxnDetail);
         log.info("[transferOutQrBio] LMPS_TXN_DETAIL updated id={} status=COMPLETED cbsRefNo={} txnId={}", lmpsTxnDetail.getId(), result.getCbsRefNo(), withdrawTxn.getTransactionId());
 
+        // Send push notification — non-fatal
+        try {
+            String desc = String.format("ທ່ານໄດ້ໂອນເງີນ - %.2f %s You have successfully transferred", finalAmount, withdrawTxn.getCurrencyCode());
+            apiNotification.send("Withdraw", desc, mobileNo);
+            log.info("[transferOutQrBio] notification sent txnId={}", withdrawTxn.getTransactionId());
+        } catch (Exception e) {
+            log.warn("[transferOutQrBio] notification failed, continuing txnId={} error={}", withdrawTxn.getTransactionId(), e.getMessage());
+        }
+
         TransferOutQrResponse response = new TransferOutQrResponse();
         response.setTransactionId(result.getTxnId());
         response.setSlipCode(result.getTxnId());
