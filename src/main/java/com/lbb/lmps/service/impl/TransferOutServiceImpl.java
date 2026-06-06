@@ -394,12 +394,16 @@ public class TransferOutServiceImpl implements TransferOutService {
 
         // Biometric signature verification
         log.info("[transferOutQrBio] verifying biometric signature customerId={}", customerId);
-        String bioKeyPem = customerRepository.findById(customerId)
-                .map(Customer::getBioKey)
+        Customer customer = customerRepository.findById(customerId)
                 .orElseThrow(() -> {
                     log.warn("[transferOutQrBio] no customer found customerId={}", customerId);
                     return new ResourceNotFoundException("Customer not found: " + customerId);
                 });
+        String bioKeyPem = customer.getBioKey();
+        if (bioKeyPem == null || bioKeyPem.trim().isEmpty()) {
+            log.warn("[transferOutQrBio] biometric key not found customerId={}", customerId);
+            throw new RuntimeException("Biometric key not registered");
+        }
         verifyBioSignature(bioKeyPem, request.getTimestamp(), mobileNo, request.getSecret(), request.getSignature(), customerId);
         log.info("[transferOutQrBio] biometric signature verified ok customerId={}", customerId);
 
@@ -561,12 +565,16 @@ public class TransferOutServiceImpl implements TransferOutService {
 
         // Biometric signature verification
         log.info("[transferOutAccountBio] verifying biometric signature customerId={}", customerId);
-        String bioKeyPem = customerRepository.findById(customerId)
-                .map(Customer::getBioKey)
+        Customer customer = customerRepository.findById(customerId)
                 .orElseThrow(() -> {
                     log.warn("[transferOutAccountBio] no customer found customerId={}", customerId);
                     return new ResourceNotFoundException("Customer not found: " + customerId);
                 });
+        String bioKeyPem = customer.getBioKey();
+        if (bioKeyPem == null || bioKeyPem.trim().isEmpty()) {
+            log.warn("[transferOutAccountBio] biometric key not found customerId={}", customerId);
+            throw new RuntimeException("Biometric key not registered");
+        }
         verifyBioSignature(bioKeyPem, request.getTimestamp(), mobileNo, request.getSecret(), request.getSignature(), customerId);
         log.info("[transferOutAccountBio] biometric signature verified ok customerId={}", customerId);
 

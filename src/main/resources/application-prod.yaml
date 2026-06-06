@@ -32,7 +32,7 @@ external:
       url: http://172.16.0.48:7001
     notification:
       url: http://172.16.0.40:2565
-      api-key: A3STRPQFKB2C4JX588
+      api-key: A3STRPQFKB2C4JX589
 
 minio:
   endpoint: https://s3-uat.laobullionbank.com
