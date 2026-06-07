@@ -394,12 +394,16 @@ public class TransferOutServiceImpl implements TransferOutService {
 
         // Biometric signature verification
         log.info("[transferOutQrBio] verifying biometric signature customerId={}", customerId);
-        String bioKeyPem = customerRepository.findById(customerId)
-                .map(Customer::getBioKey)
+        Customer customer = customerRepository.findById(customerId)
                 .orElseThrow(() -> {
                     log.warn("[transferOutQrBio] no customer found customerId={}", customerId);
                     return new ResourceNotFoundException("Customer not found: " + customerId);
                 });
+        String bioKeyPem = customer.getBioKey();
+        if (bioKeyPem == null || bioKeyPem.trim().isEmpty()) {
+            log.warn("[transferOutQrBio] biometric key not found customerId={}", customerId);
+            throw new RuntimeException("Biometric key not registered");
+        }
         verifyBioSignature(bioKeyPem, request.getTimestamp(), mobileNo, request.getSecret(), request.getSignature(), customerId);
         log.info("[transferOutQrBio] biometric signature verified ok customerId={}", customerId);
 
@@ -520,6 +524,15 @@ public class TransferOutServiceImpl implements TransferOutService {
         lmpsTxnDetailRepository.save(lmpsTxnDetail);
         log.info("[transferOutQrBio] LMPS_TXN_DETAIL updated id={} status=COMPLETED cbsRefNo={} txnId={}", lmpsTxnDetail.getId(), result.getCbsRefNo(), withdrawTxn.getTransactionId());
 
+        // Send push notification — non-fatal
+        try {
+            String desc = String.format("ທ່ານໄດ້ໂອນເງີນ - %.2f %s You have successfully transferred", finalAmount, withdrawTxn.getCurrencyCode());
+            apiNotification.send("Withdraw", desc, mobileNo);
+            log.info("[transferOutQrBio] notification sent txnId={}", withdrawTxn.getTransactionId());
+        } catch (Exception e) {
+            log.warn("[transferOutQrBio] notification failed, continuing txnId={} error={}", withdrawTxn.getTransactionId(), e.getMessage());
+        }
+
         TransferOutQrResponse response = new TransferOutQrResponse();
         response.setTransactionId(result.getTxnId());
         response.setSlipCode(result.getTxnId());
@@ -535,6 +548,164 @@ public class TransferOutServiceImpl implements TransferOutService {
         response.setPurpose(result.getPurpose());
 
         log.info("[transferOutQrBio] completed txnId={} totalAmount={} feeAmt={} cbsRefNo={} duration_ms={}", result.getTxnId(), response.getTotalAmount(), response.getFeeAmt(), response.getProviderRef(), System.currentTimeMillis() - start);
+        return response;
+    }
+
+    @Override
+    @Transactional
+    public TransferOutQrResponse transferOutAccountBio(TransferOutAccountBioRequest request, String deviceId) throws Exception {
+        log.info("[transferOutAccountBio] deviceId={} amount={} nonce={}", deviceId, request.getAmount(), request.getXNonce());
+        long start = System.currentTimeMillis();
+
+        Claims claims = (Claims) SecurityContextHolder.getContext().getAuthentication().getDetails();
+        String userId = claims.getSubject();
+        String customerId = (String) claims.get("user-id");
+        String mobileNo = (String) claims.get("user-phone");
+        log.info("[transferOutAccountBio] userId={} customerId={}", userId, customerId);
+
+        // Biometric signature verification
+        log.info("[transferOutAccountBio] verifying biometric signature customerId={}", customerId);
+        Customer customer = customerRepository.findById(customerId)
+                .orElseThrow(() -> {
+                    log.warn("[transferOutAccountBio] no customer found customerId={}", customerId);
+                    return new ResourceNotFoundException("Customer not found: " + customerId);
+                });
+        String bioKeyPem = customer.getBioKey();
+        if (bioKeyPem == null || bioKeyPem.trim().isEmpty()) {
+            log.warn("[transferOutAccountBio] biometric key not found customerId={}", customerId);
+            throw new RuntimeException("Biometric key not registered");
+        }
+        verifyBioSignature(bioKeyPem, request.getTimestamp(), mobileNo, request.getSecret(), request.getSignature(), customerId);
+        log.info("[transferOutAccountBio] biometric signature verified ok customerId={}", customerId);
+
+        // Load WITHDRAW_TXN by nonce
+        WithdrawTxn withdrawTxn = withdrawTxnRepository.findByNonce(request.getXNonce())
+                .orElseThrow(() -> {
+                    log.warn("[transferOutAccountBio] no WITHDRAW_TXN found for nonce={}", request.getXNonce());
+                    return new ResourceNotFoundException("Invalid or expired transaction nonce");
+                });
+
+        if (!customerId.equals(withdrawTxn.getCustomerId())) {
+            log.warn("[transferOutAccountBio] nonce ownership mismatch caller={} owner={}", customerId, withdrawTxn.getCustomerId());
+            throw new ResourceNotFoundException("Invalid or expired transaction nonce");
+        }
+
+        if (!"DEBIT_PENDING".equals(withdrawTxn.getStatus())) {
+            log.warn("[transferOutAccountBio] unexpected status={} for nonce={}", withdrawTxn.getStatus(), request.getXNonce());
+            throw new BusinessException("4001", messageSource.getMessage("error.4001.message", null, LocaleContextHolder.getLocale()));
+        }
+
+        if (!request.getToAccount().equals(withdrawTxn.getCrAccountNo())) {
+            log.warn("[transferOutAccountBio] account mismatch caller request={} stored={}", request.getToAccount(), withdrawTxn.getCrAccountNo());
+            throw new ResourceNotFoundException("Invalid or expired transaction nonce");
+        }
+
+        log.info("[transferOutAccountBio] loaded WITHDRAW_TXN id={} txnId={}", withdrawTxn.getId(), withdrawTxn.getTransactionId());
+
+        // toMember was stored in REMARK at inquiry time
+        String toMember = withdrawTxn.getRemark();
+
+        // Calculate fee from LMPS_TXN_DETAIL snapshot
+        LmpsTxnDetail lmpsTxnDetail = lmpsTxnDetailRepository.findByTransactionId(withdrawTxn.getTransactionId())
+                .orElseThrow(() -> {
+                    log.warn("[transferOutAccountBio] no LMPS_TXN_DETAIL found for txnId={}", withdrawTxn.getTransactionId());
+                    return new ResourceNotFoundException("Transaction detail not found: " + withdrawTxn.getTransactionId());
+                });
+        log.info("[transferOutAccountBio] reading feeList from LMPS_TXN_DETAIL txnId={}", withdrawTxn.getTransactionId());
+        FeeList feeList = lmpsTxnDetail.getFeeList() != null
+                ? mapper.readValue(lmpsTxnDetail.getFeeList(), FeeList.class)
+                : new FeeList();
+        BigDecimal txnFee = calculateFee(feeList, request.getAmount(), withdrawTxn.getCurrencyCode());
+        log.info("[transferOutAccountBio] txnFee={} amount={} ccy={}", txnFee, request.getAmount(), withdrawTxn.getCurrencyCode());
+
+        // Execute transfer-out
+        ClientInfo clientInfo = new ClientInfo();
+        clientInfo.setDeviceId(deviceId);
+        clientInfo.setMobileNo(mobileNo);
+        clientInfo.setUserId(userId);
+
+        SecurityContext msCtx = new SecurityContext();
+        msCtx.setChannel("MSMART");
+
+        SmartTransferOutData transferData = new SmartTransferOutData();
+        transferData.setTxnId(withdrawTxn.getTransactionId());
+        transferData.setCbsRefNo(null);
+        transferData.setTxnType("LMPOTA");
+        transferData.setTxnAmount(request.getAmount());
+        transferData.setTxnFee(txnFee);
+        transferData.setTxnCcy(withdrawTxn.getCurrencyCode());
+        transferData.setPurpose(request.getPurpose());
+        transferData.setFromUserId(userId);
+        transferData.setFromCustName(withdrawTxn.getDrAccountName());
+        transferData.setFromAcctId(withdrawTxn.getDrAccountNo());
+        transferData.setFromCif(withdrawTxn.getDrCif());
+        transferData.setToCustName(withdrawTxn.getCrAccountName());
+        transferData.setToAcctId(withdrawTxn.getCrAccountNo());
+        transferData.setToCif(null);
+        transferData.setToType("ACCOUNT");
+        transferData.setToMemberId(toMember);
+
+        SmartTransferOutRequest transferRequest = new SmartTransferOutRequest();
+        transferRequest.setRequestId(null);
+        transferRequest.setClientInfo(clientInfo);
+        transferRequest.setSecurityContext(msCtx);
+        transferRequest.setData(transferData);
+
+        log.info("[transferOutAccountBio] calling m-smart transfer-out txnId={} amount={} fee={} ccy={} toMember={}", withdrawTxn.getTransactionId(), request.getAmount(), txnFee, withdrawTxn.getCurrencyCode(), toMember);
+        String rawTransfer = apiMSmart.callTransferOut(transferRequest);
+        SmartTransferOutResponse transferResponse = mapper.readValue(rawTransfer, SmartTransferOutResponse.class);
+        if (!"0000".equals(transferResponse.getResponseCode())) {
+            log.warn("[transferOutAccountBio] m-smart transfer error | code={} msg={}", transferResponse.getResponseCode(), transferResponse.getResponseMessage());
+            throw new MSmartException(transferResponse.getResponseCode(), transferResponse.getResponseMessage());
+        }
+
+        SmartTransferOutData result = transferResponse.getData();
+        log.info("[transferOutAccountBio] m-smart transfer-out success cbsRefNo={} txnId={}", result.getCbsRefNo(), result.getTxnId());
+
+        // Update WITHDRAW_TXN and LMPS_TXN_DETAIL
+        BigDecimal finalAmount = result.getTxnAmount() != null ? result.getTxnAmount() : request.getAmount();
+        BigDecimal finalFee = result.getTxnFee() != null ? result.getTxnFee() : txnFee;
+
+        withdrawTxn.setStatus("COMPLETED");
+        withdrawTxn.setAmount(finalAmount);
+        withdrawTxn.setFeeAmt(finalFee);
+        withdrawTxn.setFeeProviderAmt(finalFee);
+        withdrawTxn.setCoreBankingRef(result.getCbsRefNo());
+        withdrawTxnRepository.save(withdrawTxn);
+        log.info("[transferOutAccountBio] WITHDRAW_TXN updated id={} status=COMPLETED cbsRefNo={} txnId={}", withdrawTxn.getId(), result.getCbsRefNo(), withdrawTxn.getTransactionId());
+
+        lmpsTxnDetail.setStatus("COMPLETED");
+        lmpsTxnDetail.setAmount(finalAmount);
+        lmpsTxnDetail.setFeeAmt(finalFee);
+        lmpsTxnDetail.setFeeProviderAmt(finalFee);
+        lmpsTxnDetail.setCoreBankingRef(result.getCbsRefNo());
+        lmpsTxnDetailRepository.save(lmpsTxnDetail);
+        log.info("[transferOutAccountBio] LMPS_TXN_DETAIL updated id={} status=COMPLETED cbsRefNo={} txnId={}", lmpsTxnDetail.getId(), result.getCbsRefNo(), withdrawTxn.getTransactionId());
+
+        // Send push notification — non-fatal
+        try {
+            String desc = String.format("ທ່ານໄດ້ໂອນເງີນ - %.2f %s You have successfully transferred", finalAmount, withdrawTxn.getCurrencyCode());
+            apiNotification.send("Withdraw", desc, mobileNo);
+            log.info("[transferOutAccountBio] notification sent txnId={}", withdrawTxn.getTransactionId());
+        } catch (Exception e) {
+            log.warn("[transferOutAccountBio] notification failed, continuing txnId={} error={}", withdrawTxn.getTransactionId(), e.getMessage());
+        }
+
+        TransferOutQrResponse response = new TransferOutQrResponse();
+        response.setTransactionId(result.getTxnId());
+        response.setSlipCode(result.getTxnId());
+        response.setTranDate(LocalDateTime.now().format(TRAN_DATE_FMT));
+        response.setTotalAmount(result.getTxnAmount());
+        response.setCurrencyCode(result.getTxnCcy());
+        response.setFeeAmt(result.getTxnFee());
+        response.setDrAccountNo(result.getFromAcctId());
+        response.setDrAccountName(result.getFromCustName());
+        response.setCrAccountNo(result.getToAcctId());
+        response.setCrAccountName(result.getToCustName());
+        response.setProviderRef(result.getCbsRefNo());
+        response.setPurpose(result.getPurpose());
+
+        log.info("[transferOutAccountBio] completed txnId={} totalAmount={} feeAmt={} cbsRefNo={} duration_ms={}", result.getTxnId(), response.getTotalAmount(), response.getFeeAmt(), response.getProviderRef(), System.currentTimeMillis() - start);
         return response;
     }
 
