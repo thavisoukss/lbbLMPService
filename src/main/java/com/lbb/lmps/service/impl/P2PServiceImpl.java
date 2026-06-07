@@ -184,6 +184,8 @@ public class P2PServiceImpl implements P2PService {
                     return new ResourceNotFoundException("QuotationNotFound", "Quotation not found or expired");
                 });
 
+        log.info("[transferQuotationVerify] loaded details txnId={} customerId={} status={}", details.getTxnId(), details.getCustomerId(), details.getStatus());
+
         if (!customerId.equals(details.getCustomerId())) {
             log.warn("[transferQuotationVerify] ownership mismatch caller={} owner={}", customerId, details.getCustomerId());
             throw new ResourceNotFoundException("QuotationNotFound", "Quotation not found or expired");
@@ -199,6 +201,18 @@ public class P2PServiceImpl implements P2PService {
             throw new BusinessException("QuotationExpired", "Quotation has expired, please start a new inquiry");
         }
 
+        // Validate security question IDs presence and distinctness
+        if (request.getFirstQuestionId() == null || request.getSecondQuestionId() == null || request.getThirdQuestionId() == null) {
+            log.warn("[transferQuotationVerify] missing security question IDs customerId={}", customerId);
+            throw new SecurityQuestionException("ER_FIRST_ANSWER_INVALID", "Security question IDs are missing");
+        }
+        if (request.getFirstQuestionId().equals(request.getSecondQuestionId())
+                || request.getFirstQuestionId().equals(request.getThirdQuestionId())
+                || request.getSecondQuestionId().equals(request.getThirdQuestionId())) {
+            log.warn("[transferQuotationVerify] duplicate security question IDs customerId={}", customerId);
+            throw new SecurityQuestionException("ER_FIRST_ANSWER_INVALID", "Security question IDs must be distinct");
+        }
+
         // 2. Verify security questions
         Map<String, String> storedAnswers = securityQuestionRepository.findAnswersByCustomerId(customerId)
                 .stream()
@@ -212,52 +226,64 @@ public class P2PServiceImpl implements P2PService {
         verifySecurityAnswer(storedAnswers, request.getThirdQuestionId(), request.getThirdAnswer(), customerId, "ER_THIRD_ANSWER_INVALID");
         log.info("[transferQuotationVerify] security questions verified ok customerId={}", customerId);
 
-        // 3. Call CBS P2P transfer
-        String transactionId = commonInfo.genTransactionId("P2P");
-        log.info("[transferQuotationVerify] calling CBS p2pTransfer txnId={} goldWeight={}", transactionId, details.getGoldWeight());
-        ApiCoreBanking.CbsP2PTransferResult cbsResult = apiCoreBanking.p2pTransfer(
-                transactionId, customerId,
-                details.getDrAccountNo(), details.getCrAccountNo(),
-                details.getGoldWeight(), details.getPurpose());
-        log.info("[transferQuotationVerify] CBS p2pTransfer success slipCode={}", cbsResult.slipCode());
+        try {
+            // 3. Call CBS P2P transfer
+            String transactionId = commonInfo.genTransactionId("P2P");
+            log.info("[transferQuotationVerify] calling CBS p2pTransfer txnId={} goldWeight={} elapsed_ms={}",
+                    transactionId, details.getGoldWeight(), System.currentTimeMillis() - start);
+            ApiCoreBanking.CbsP2PTransferResult cbsResult = apiCoreBanking.p2pTransfer(
+                    transactionId, customerId,
+                    details.getDrAccountNo(), details.getCrAccountNo(),
+                    details.getGoldWeight(), details.getPurpose());
+            log.info("[transferQuotationVerify] CBS p2pTransfer success cbsRefNo={} slipCode={} txnId={}",
+                    cbsResult.transactionId(), cbsResult.slipCode(), transactionId);
 
-        // 4. Mark P2P_TXN_DETAIL as COMPLETED
-        LocalDateTime now = LocalDateTime.now();
-        details.setCbsRefNo(cbsResult.transactionId());
-        details.setDrCbsSeqno(cbsResult.drCbsSeqno());
-        details.setCrCbsSeqno(cbsResult.crCbsSeqno());
-        details.setStatus("COMPLETED");
-        details.setUpdateAt(now);
-        p2pTxnDetailRepository.save(details);
-        log.info("[transferQuotationVerify] P2P_TXN_DETAIL updated txnId={} status=COMPLETED drCbsSeqno={} crCbsSeqno={}", request.getRef(), cbsResult.drCbsSeqno(), cbsResult.crCbsSeqno());
+            // 4. Mark P2P_TXN_DETAIL as COMPLETED
+            LocalDateTime now = LocalDateTime.now();
+            details.setCbsRefNo(cbsResult.transactionId());
+            details.setDrCbsSeqno(cbsResult.drCbsSeqno());
+            details.setCrCbsSeqno(cbsResult.crCbsSeqno());
+            details.setStatus("COMPLETED");
+            details.setUpdateAt(now);
+            p2pTxnDetailRepository.save(details);
+            log.info("[transferQuotationVerify] P2P_TXN_DETAIL updated txnId={} status=COMPLETED drCbsSeqno={} crCbsSeqno={}", request.getRef(), cbsResult.drCbsSeqno(), cbsResult.crCbsSeqno());
 
-        // 6. Build response
-        P2PTransferVerifyResponse.TransferData data = new P2PTransferVerifyResponse.TransferData();
-        data.setTransactionId(cbsResult.transactionId());
-        data.setSlipCode(cbsResult.slipCode());
-        data.setTranDate(now.format(TRAN_DATE_FMT));
-        data.setDrAccountNo(details.getDrAccountNo());
-        data.setDrAccountName(details.getDrAccountName());
-        data.setDrAccountCcy(details.getDrCcy());
-        data.setCrAccountNo(details.getCrAccountNo());
-        data.setCrAccountName(details.getCrAccountName());
-        data.setCrAccountCcy(details.getCrCcy());
-        data.setGoldWeight(details.getGoldWeight());
-        data.setMemo(details.getPurpose());
-        data.setFee(BigDecimal.ZERO);
+            // 5. Build response
+            P2PTransferVerifyResponse.TransferData data = new P2PTransferVerifyResponse.TransferData();
+            data.setTransactionId(cbsResult.transactionId());
+            data.setSlipCode(cbsResult.slipCode());
+            data.setTranDate(now.format(TRAN_DATE_FMT));
+            data.setDrAccountNo(details.getDrAccountNo());
+            data.setDrAccountName(details.getDrAccountName());
+            data.setDrAccountCcy(details.getDrCcy());
+            data.setCrAccountNo(details.getCrAccountNo());
+            data.setCrAccountName(details.getCrAccountName());
+            data.setCrAccountCcy(details.getCrCcy());
+            data.setGoldWeight(details.getGoldWeight());
+            data.setMemo(details.getPurpose());
+            data.setFee(BigDecimal.ZERO);
 
-        P2PTransferVerifyResponse response = new P2PTransferVerifyResponse();
-        response.setStatus("success");
-        response.setData(data);
+            P2PTransferVerifyResponse response = new P2PTransferVerifyResponse();
+            response.setStatus("success");
+            response.setData(data);
 
-        log.info("[transferQuotationVerify] completed txnId={} slipCode={} goldWeight={} duration_ms={}",
-                cbsResult.transactionId(), cbsResult.slipCode(), details.getGoldWeight(),
-                System.currentTimeMillis() - start);
-        return response;
+            log.info("[transferQuotationVerify] completed txnId={} slipCode={} goldWeight={} duration_ms={}",
+                    cbsResult.transactionId(), cbsResult.slipCode(), details.getGoldWeight(),
+                    System.currentTimeMillis() - start);
+            return response;
+        } catch (Exception e) {
+            log.error("[transferQuotationVerify] unhandled exception txnId={} message={}", request.getRef(), e.getMessage(), e);
+            throw e;
+        }
     }
 
     private void verifySecurityAnswer(Map<String, String> stored, String questionId, String answer,
                                       String customerId, String errorCode) {
+        if (questionId == null || answer == null) {
+            log.warn("[transferQuotationVerify] security question ID or answer is null customerId={} questionId={} errorCode={}",
+                    customerId, questionId, errorCode);
+            throw new SecurityQuestionException(errorCode, "Security answer is incorrect");
+        }
         String hash = stored.get(questionId);
         if (hash == null || !PASSWORD_ENCODER.matches(answer, hash)) {
             log.warn("[transferQuotationVerify] security question failed customerId={} questionId={} errorCode={}",
