@@ -19,6 +19,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.MessageSource;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -29,7 +30,9 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -43,6 +46,7 @@ class P2PServiceImplTest {
     @Mock ApiCoreBanking apiCoreBanking;
     @Mock MinioStorageService minioStorageService;
     @Mock CommonInfo commonInfo;
+    @Mock MessageSource messageSource;
 
     @InjectMocks P2PServiceImpl service;
 
@@ -60,6 +64,9 @@ class P2PServiceImplTest {
         when(authentication.getDetails()).thenReturn(claims);
         when(claims.get("user-id")).thenReturn(DEBTOR_ID);
         SecurityContextHolder.setContext(securityContext);
+
+        lenient().when(messageSource.getMessage(any(), any(), anyString(), any()))
+                .thenAnswer(invocation -> invocation.getArgument(2));
     }
 
     @AfterEach

@@ -16,8 +16,8 @@ echo "Token: $TOKEN"
 echo ""
 
 # ─── Step 2: Get Account Info by Phone ───────────────────────────────────────
-echo "==> POST /api/p2p/get-account-info-by-phone"
-curl -s -X POST http://localhost:8084/api/p2p/get-account-info-by-phone \
+echo "==> GET /payment/p2p/get-account-info-by-phone"
+curl -s -X GET http://localhost:8084/payment/p2p/get-account-info-by-phone \
   -H 'Content-Type: application/json' \
   -H "Authorization: Bearer $TOKEN" \
   -d '{

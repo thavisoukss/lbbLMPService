@@ -18,6 +18,8 @@ import com.lbb.lmps.utils.CommonInfo;
 import io.jsonwebtoken.Claims;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.MessageSource;
+import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -46,6 +48,11 @@ public class P2PServiceImpl implements P2PService {
     private final SecurityQuestionRepository securityQuestionRepository;
     private final P2PTxnDetailRepository p2pTxnDetailRepository;
     private final CommonInfo commonInfo;
+    private final MessageSource messageSource;
+
+    private String getMessage(String code, String defaultMessage) {
+        return messageSource.getMessage("error." + code + ".message", null, defaultMessage, LocaleContextHolder.getLocale());
+    }
 
     @Override
     @Transactional(readOnly = true)
@@ -56,13 +63,13 @@ public class P2PServiceImpl implements P2PService {
         Customer customer = customerRepository.findByPhone(crPhone)
                 .orElseThrow(() -> {
                     log.warn("[getAccountInfoByPhone] no customer found for phone={}", crPhone);
-                    return new ResourceNotFoundException("AccountInfoNotFound", "Account info not found");
+                    return new ResourceNotFoundException("AccountInfoNotFound", getMessage("AccountInfoNotFound", "Account info not found"));
                 });
 
         Account account = accountRepository.findLbiCurrentByCustomerId(customer.getId())
                 .orElseThrow(() -> {
                     log.warn("[getAccountInfoByPhone] no LBI CURRENT account for customerId={}", customer.getId());
-                    return new ResourceNotFoundException("AccountInfoNotFound", "Account info not found");
+                    return new ResourceNotFoundException("AccountInfoNotFound", getMessage("AccountInfoNotFound", "Account info not found"));
                 });
 
         log.info("[getAccountInfoByPhone] account loaded accountNo={} customerId={}", account.getAccountNo(), account.getCustomerId());
@@ -99,15 +106,15 @@ public class P2PServiceImpl implements P2PService {
 
         // 1. Debtor lookup
         Customer debtor = customerRepository.findById(customerId)
-                .orElseThrow(() -> new ResourceNotFoundException("AccountInfoNotFound", "Debtor not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("AccountInfoNotFound", getMessage("AccountInfoNotFound", "Debtor not found")));
         Account drAccount = accountRepository.findLbiCurrentByCustomerId(debtor.getId())
-                .orElseThrow(() -> new ResourceNotFoundException("AccountInfoNotFound", "Debtor account not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("AccountInfoNotFound", getMessage("AccountInfoNotFound", "Debtor account not found")));
 
         // 2. Creditor lookup
         Customer creditor = customerRepository.findByPhone(request.getCrPhone())
-                .orElseThrow(() -> new ResourceNotFoundException("AccountInfoNotFound", "Creditor not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("AccountInfoNotFound", getMessage("AccountInfoNotFound", "Creditor not found")));
         Account crAccount = accountRepository.findLbiCurrentByCustomerId(creditor.getId())
-                .orElseThrow(() -> new ResourceNotFoundException("AccountInfoNotFound", "Creditor account not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("AccountInfoNotFound", getMessage("AccountInfoNotFound", "Creditor account not found")));
 
         // 3. Rate inquiry
         GoldRateResponse goldRate = apiCoreBanking.getRate();
@@ -181,36 +188,36 @@ public class P2PServiceImpl implements P2PService {
         P2PTxnDetail details = p2pTxnDetailRepository.findByIdForUpdate(request.getRef())
                 .orElseThrow(() -> {
                     log.warn("[transferQuotationVerify] details not found ref={}", request.getRef());
-                    return new ResourceNotFoundException("QuotationNotFound", "Quotation not found or expired");
+                    return new ResourceNotFoundException("QuotationNotFound", getMessage("QuotationNotFound", "Quotation not found or expired"));
                 });
 
         log.info("[transferQuotationVerify] loaded details txnId={} customerId={} status={}", details.getTxnId(), details.getCustomerId(), details.getStatus());
 
         if (!customerId.equals(details.getCustomerId())) {
             log.warn("[transferQuotationVerify] ownership mismatch caller={} owner={}", customerId, details.getCustomerId());
-            throw new ResourceNotFoundException("QuotationNotFound", "Quotation not found or expired");
+            throw new ResourceNotFoundException("QuotationNotFound", getMessage("QuotationNotFound", "Quotation not found or expired"));
         }
 
         if (!"PENDING".equals(details.getStatus())) {
             log.warn("[transferQuotationVerify] already used ref={} status={}", request.getRef(), details.getStatus());
-            throw new BusinessException("QuotationAlreadyUsed", "Quotation has already been used");
+            throw new BusinessException("QuotationAlreadyUsed", getMessage("QuotationAlreadyUsed", "Quotation has already been used"));
         }
 
         if (LocalDateTime.now().isAfter(details.getExpiredAt())) {
             log.warn("[transferQuotationVerify] expired ref={} expiredAt={}", request.getRef(), details.getExpiredAt());
-            throw new BusinessException("QuotationExpired", "Quotation has expired, please start a new inquiry");
+            throw new BusinessException("QuotationExpired", getMessage("QuotationExpired", "Quotation has expired, please start a new inquiry"));
         }
 
         // Validate security question IDs presence and distinctness
         if (request.getFirstQuestionId() == null || request.getSecondQuestionId() == null || request.getThirdQuestionId() == null) {
             log.warn("[transferQuotationVerify] missing security question IDs customerId={}", customerId);
-            throw new SecurityQuestionException("ER_FIRST_ANSWER_INVALID", "Security question IDs are missing");
+            throw new SecurityQuestionException("ER_FIRST_ANSWER_INVALID", getMessage("ER_FIRST_ANSWER_INVALID", "Security question IDs are missing"));
         }
         if (request.getFirstQuestionId().equals(request.getSecondQuestionId())
                 || request.getFirstQuestionId().equals(request.getThirdQuestionId())
                 || request.getSecondQuestionId().equals(request.getThirdQuestionId())) {
             log.warn("[transferQuotationVerify] duplicate security question IDs customerId={}", customerId);
-            throw new SecurityQuestionException("ER_FIRST_ANSWER_INVALID", "Security question IDs must be distinct");
+            throw new SecurityQuestionException("ER_FIRST_ANSWER_INVALID", getMessage("ER_FIRST_ANSWER_INVALID", "Security question IDs must be distinct"));
         }
 
         // 2. Verify security questions
@@ -282,13 +289,13 @@ public class P2PServiceImpl implements P2PService {
         if (questionId == null || answer == null) {
             log.warn("[transferQuotationVerify] security question ID or answer is null customerId={} questionId={} errorCode={}",
                     customerId, questionId, errorCode);
-            throw new SecurityQuestionException(errorCode, "Security answer is incorrect");
+            throw new SecurityQuestionException(errorCode, getMessage(errorCode, "Security answer is incorrect"));
         }
         String hash = stored.get(questionId);
         if (hash == null || !PASSWORD_ENCODER.matches(answer, hash)) {
             log.warn("[transferQuotationVerify] security question failed customerId={} questionId={} errorCode={}",
                     customerId, questionId, errorCode);
-            throw new SecurityQuestionException(errorCode, "Security answer is incorrect");
+            throw new SecurityQuestionException(errorCode, getMessage(errorCode, "Security answer is incorrect"));
         }
     }
 }

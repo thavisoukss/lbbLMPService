@@ -16,8 +16,8 @@ echo "Token: $TOKEN"
 echo ""
 
 # ─── Step 2: Get Account Info by Phone ───────────────────────────────────────
-echo "==> POST /api/p2p/get-account-info-by-phone"
-curl -s -X POST http://localhost:8084/api/p2p/get-account-info-by-phone \
+echo "==> GET /payment/p2p/get-account-info-by-phone"
+curl -s -X GET http://localhost:8084/payment/p2p/get-account-info-by-phone \
   -H 'Content-Type: application/json' \
   -H "Authorization: Bearer $TOKEN" \
   -d '{
@@ -26,8 +26,8 @@ curl -s -X POST http://localhost:8084/api/p2p/get-account-info-by-phone \
 echo ""
 
 # ─── Step 3: P2P Inquiry ─────────────────────────────────────────────────────
-echo "==> POST /api/p2p/inquiry"
-curl -s -X POST http://localhost:8084/api/p2p/inquiry \
+echo "==> POST /payment/p2p/inquiry"
+curl -s -X POST http://localhost:8084/payment/p2p/inquiry \
   -H 'Content-Type: application/json' \
   -H "Authorization: Bearer $TOKEN" \
   -d '{
