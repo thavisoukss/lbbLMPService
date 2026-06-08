@@ -6,7 +6,9 @@ import com.lbb.lmps.exception.*;
 import com.lbb.lmps.remote.ApiCoreBanking;
 import com.lbb.lmps.repository.AccountRepository;
 import com.lbb.lmps.repository.CustomerRepository;
+import com.lbb.lmps.remote.ApiNotification;
 import com.lbb.lmps.repository.P2PTxnDetailRepository;
+import com.lbb.lmps.repository.P2PTransactionRepository;
 import com.lbb.lmps.repository.SecurityQuestionRepository;
 import com.lbb.lmps.repository.SecurityQuestionRepository.SecurityQuestionProjection;
 import com.lbb.lmps.service.impl.P2PServiceImpl;
@@ -47,6 +49,8 @@ class P2PServiceImplTest {
     @Mock MinioStorageService minioStorageService;
     @Mock CommonInfo commonInfo;
     @Mock MessageSource messageSource;
+    @Mock P2PTransactionRepository p2pTransactionRepository;
+    @Mock ApiNotification apiNotification;
 
     @InjectMocks P2PServiceImpl service;
 

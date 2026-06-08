@@ -4,13 +4,16 @@ import com.lbb.lmps.dto.*;
 import com.lbb.lmps.entity.Account;
 import com.lbb.lmps.entity.Customer;
 import com.lbb.lmps.entity.P2PTxnDetail;
+import com.lbb.lmps.entity.P2PTransaction;
 import com.lbb.lmps.exception.BusinessException;
 import com.lbb.lmps.exception.ResourceNotFoundException;
 import com.lbb.lmps.exception.SecurityQuestionException;
 import com.lbb.lmps.remote.ApiCoreBanking;
+import com.lbb.lmps.remote.ApiNotification;
 import com.lbb.lmps.repository.AccountRepository;
 import com.lbb.lmps.repository.CustomerRepository;
 import com.lbb.lmps.repository.P2PTxnDetailRepository;
+import com.lbb.lmps.repository.P2PTransactionRepository;
 import com.lbb.lmps.repository.SecurityQuestionRepository;
 import com.lbb.lmps.service.MinioStorageService;
 import com.lbb.lmps.service.P2PService;
@@ -49,6 +52,8 @@ public class P2PServiceImpl implements P2PService {
     private final P2PTxnDetailRepository p2pTxnDetailRepository;
     private final CommonInfo commonInfo;
     private final MessageSource messageSource;
+    private final ApiNotification apiNotification;
+    private final P2PTransactionRepository p2pTransactionRepository;
 
     private String getMessage(String code, String defaultMessage) {
         return messageSource.getMessage("error." + code + ".message", null, defaultMessage, LocaleContextHolder.getLocale());
@@ -182,7 +187,8 @@ public class P2PServiceImpl implements P2PService {
 
         Claims claims = (Claims) SecurityContextHolder.getContext().getAuthentication().getDetails();
         String customerId = (String) claims.get("user-id");
-        log.info("[transferQuotationVerify] customerId={}", customerId);
+        String mobileNo = (String) claims.get("user-phone");
+        log.info("[transferQuotationVerify] customerId={} mobileNo={}", customerId, mobileNo);
 
         // 1. Load and validate P2P_TXN_DETAILS — pessimistic write lock prevents concurrent double-transfer
         P2PTxnDetail details = p2pTxnDetailRepository.findByIdForUpdate(request.getRef())
@@ -254,6 +260,34 @@ public class P2PServiceImpl implements P2PService {
             details.setUpdateAt(now);
             p2pTxnDetailRepository.save(details);
             log.info("[transferQuotationVerify] P2P_TXN_DETAIL updated txnId={} status=COMPLETED drCbsSeqno={} crCbsSeqno={}", request.getRef(), cbsResult.drCbsSeqno(), cbsResult.crCbsSeqno());
+
+            // 4b. Record completed transaction in P2P_TRANSACTION
+            P2PTransaction p2pTx = new P2PTransaction();
+            p2pTx.setTransactionId(cbsResult.transactionId());
+            p2pTx.setCustomerId(customerId);
+            p2pTx.setCoreBankingSeqno(cbsResult.drCbsSeqno());
+            p2pTx.setDrAccountNo(details.getDrAccountNo());
+            p2pTx.setDrCurrencyCode(details.getDrCcy());
+            p2pTx.setCrAccountNo(details.getCrAccountNo());
+            p2pTx.setCrCurrencyCode(details.getCrCcy());
+            p2pTx.setGoldWeight(details.getGoldWeight());
+            p2pTx.setFeeAmount(BigDecimal.ZERO);
+            p2pTx.setFeeCurrencyCode(details.getDrCcy());
+            p2pTx.setTransactionDate(now);
+            p2pTx.setCreatedAt(now);
+            p2pTx.setCrCbkSeqno(cbsResult.crCbsSeqno());
+            p2pTx.setRemark(details.getPurpose());
+            p2pTransactionRepository.save(p2pTx);
+            log.info("[transferQuotationVerify] P2P_TRANSACTION saved transactionId={} cbsRefNo={} drCbkSeqno={}", p2pTx.getTransactionId(), p2pTx.getTransactionId(), p2pTx.getCoreBankingSeqno());
+
+            // Send push notification — non-fatal
+            try {
+                String desc = String.format("ທ່ານໄດ້ໂອນຄຳ - %.4f LBI You have successfully transferred", details.getGoldWeight());
+                apiNotification.send("P2P Transfer", desc, mobileNo);
+                log.info("[transferQuotationVerify] notification sent txnId={}", details.getTxnId());
+            } catch (Exception e) {
+                log.warn("[transferQuotationVerify] notification failed, continuing txnId={} error={}", details.getTxnId(), e.getMessage());
+            }
 
             // 5. Build response
             P2PTransferVerifyResponse.TransferData data = new P2PTransferVerifyResponse.TransferData();
