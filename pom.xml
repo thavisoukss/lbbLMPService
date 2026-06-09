@@ -10,7 +10,7 @@
 
 	<groupId>com.lbb</groupId>
 	<artifactId>lmps</artifactId>
-	<version>1.2.1</version>
+	<version>1.2.3</version>
 	<name>lmps</name>
 	<description>lmps service </description>
 
