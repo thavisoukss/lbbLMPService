@@ -16,7 +16,9 @@ public class InquiryOutData {
     private String toType;
     private String toaccount;
     private String tomember;
+    @com.fasterxml.jackson.annotation.JsonAlias("tomemberName")
     private String tomembername;
+    @com.fasterxml.jackson.annotation.JsonAlias("tomemberImage")
     private String tomemberimage;
     private String reference;
     private String accountname;

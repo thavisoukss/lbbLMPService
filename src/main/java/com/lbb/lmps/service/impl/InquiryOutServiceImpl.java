@@ -15,6 +15,7 @@ import com.lbb.lmps.repository.ProviderRepository;
 import com.lbb.lmps.repository.SecurityQuestionRepository;
 import com.lbb.lmps.repository.WithdrawTxnRepository;
 import com.lbb.lmps.service.InquiryOutService;
+import com.lbb.lmps.service.MinioStorageService;
 import com.lbb.lmps.utils.CommonInfo;
 import io.jsonwebtoken.Claims;
 import lombok.RequiredArgsConstructor;
@@ -47,6 +48,7 @@ public class InquiryOutServiceImpl implements InquiryOutService {
     private final LmpsTxnDetailRepository lmpsTxnDetailRepository;
     private final ProviderRepository providerRepository;
     private final CommonInfo commonInfo;
+    private final MinioStorageService minioStorageService;
 
     @Override
     @Transactional
@@ -87,12 +89,22 @@ public class InquiryOutServiceImpl implements InquiryOutService {
             throw new MSmartException(smartResponse.getResponseCode(), smartResponse.getResponseMessage());
         }
 
+        InquiryOutData inquiryData = smartResponse.getData();
+        if (inquiryData != null) {
+            if (inquiryData.getTomembername() == null || inquiryData.getTomembername().isBlank()) {
+                inquiryData.setTomembername(request.getToMember());
+            }
+            if (inquiryData.getTomemberimage() != null && !inquiryData.getTomemberimage().isBlank()) {
+                inquiryData.setTomemberimage(minioStorageService.getFileURL("icon_image", inquiryData.getTomemberimage()));
+            }
+        }
+
         String xNonce = UUID.randomUUID().toString();
-        saveInquiryRecord(customerId, ctx.customerName(), ctx.accountNo(), xNonce, smartResponse.getData(), "ACCOUNT");
+        saveInquiryRecord(customerId, ctx.customerName(), ctx.accountNo(), xNonce, inquiryData, "ACCOUNT");
 
         InquiryOutResponse response = new InquiryOutResponse();
         response.setStatus("success");
-        response.setData(smartResponse.getData());
+        response.setData(inquiryData);
         response.setXNonce(xNonce);
         response.setQuestions(ctx.questions());
 
@@ -162,6 +174,14 @@ public class InquiryOutServiceImpl implements InquiryOutService {
         inquiryData.setTxnCurrency(qrInfo.getTxnCurrency());
         inquiryData.setPurposeOfTxn(qrInfo.getPurposeOfTxn());
         inquiryData.setCity(qrInfo.getCity());
+
+        if (inquiryData.getTomembername() == null || inquiryData.getTomembername().isBlank()) {
+            inquiryData.setTomembername(qrInfo.getMemberName());
+        }
+
+        if (inquiryData.getTomemberimage() != null && !inquiryData.getTomemberimage().isBlank()) {
+            inquiryData.setTomemberimage(minioStorageService.getFileURL("icon_image", inquiryData.getTomemberimage()));
+        }
 
         String xNonce = UUID.randomUUID().toString();
         saveInquiryRecord(customerId, ctx.customerName(), ctx.accountNo(), xNonce, inquiryData, "QR");
