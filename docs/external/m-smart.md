@@ -261,6 +261,7 @@ Generates a static QR code string for a given customer account.
     "toaccount": "0100000947725",
     "tomember": "IB",
     "tomemberImage": "ib.jpg",
+    "tomemberName": "Indochina Bank",
     "reference": "LBB7TWU9VZSGASW4HKG7466",
     "accountname": "MR AXXXXXXXXX XXXXXXXXXX",
     "accountccy": "LAK",
