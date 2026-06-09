@@ -252,6 +252,24 @@ class P2PServiceImplTest {
         assertThat(response.getData().getTransactionId()).isEqualTo("CBS-REF-123");
         assertThat(response.getData().getSlipCode()).isEqualTo("SLP-456");
         assertThat(txnDetail.getStatus()).isEqualTo("COMPLETED");
+
+        org.mockito.ArgumentCaptor<P2PTransaction> captor = org.mockito.ArgumentCaptor.forClass(P2PTransaction.class);
+        org.mockito.Mockito.verify(p2pTransactionRepository).save(captor.capture());
+        P2PTransaction savedTx = captor.getValue();
+        assertThat(savedTx.getTransactionId()).isEqualTo("CBS-REF-123");
+        assertThat(savedTx.getCustomerId()).isEqualTo(DEBTOR_ID);
+        assertThat(savedTx.getCoreBankingSeqno()).isEqualTo("DR-SEQ");
+        assertThat(savedTx.getDrAccountNo()).isEqualTo("DR-001");
+        assertThat(savedTx.getDrCurrencyCode()).isEqualTo("LBI");
+        assertThat(savedTx.getCrAccountNo()).isEqualTo("CR-002");
+        assertThat(savedTx.getCrCurrencyCode()).isEqualTo("LBI");
+        assertThat(savedTx.getGoldWeight()).isEqualByComparingTo(BigDecimal.TEN);
+        assertThat(savedTx.getFeeAmount()).isEqualByComparingTo(BigDecimal.ZERO);
+        assertThat(savedTx.getFeeCurrencyCode()).isEqualTo("LBI");
+        assertThat(savedTx.getCrCbkSeqno()).isEqualTo("CR-SEQ");
+        assertThat(savedTx.getRemark()).isEqualTo("p2p");
+        assertThat(savedTx.getTransactionDate()).isNotNull();
+        assertThat(savedTx.getCreatedAt()).isNotNull();
     }
 
     @Test
