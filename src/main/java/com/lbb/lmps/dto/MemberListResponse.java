@@ -17,6 +17,6 @@ public class MemberListResponse {
 
     @Override
     public String toString() {
-        return "MemberListResponse{status='" + status + "', dataSize=" + (data != null ? data.size() : 0) + "}";
+        return "MemberListResponse{status='" + status + "', data=" + data + "}";
     }
 }
