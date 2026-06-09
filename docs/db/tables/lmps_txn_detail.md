@@ -44,6 +44,7 @@ Interim replacement for `WITHDRAW_TXN`. Records every outward transfer transacti
 | 36 | DELETE_AT | TIMESTAMP(6) | | NULL | | Soft-delete timestamp |
 | 37 | REMARK | VARCHAR2 | 100 | NULL | | Free-text remark |
 | 38 | FEE_LIST | VARCHAR2 | 4000 | NULL | | Fee schedule JSON snapshot at time of transaction (keyed by currency code) |
+| 39 | CLIENT_REF | VARCHAR2 | 100 | NULL | | Client's optional reference passed from mobile banking app |
 
 ## STATUS Values
 
@@ -143,6 +144,7 @@ CREATE TABLE LMPS_TXN_DETAIL (
     DELETE_AT                  TIMESTAMP(6),
     REMARK                     VARCHAR2(100),
     FEE_LIST                   VARCHAR2(4000),
+    CLIENT_REF                 VARCHAR2(100),
     CONSTRAINT PK_LMPS_TXN_DETAIL          PRIMARY KEY (ID),
     CONSTRAINT UK_LMPS_TXN_DETAIL_ID       UNIQUE (TRANSACTION_ID),
     CONSTRAINT UK_LMPS_TXN_DETAIL_NONCE    UNIQUE (NONCE),

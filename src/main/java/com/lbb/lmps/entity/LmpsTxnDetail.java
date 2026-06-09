@@ -73,6 +73,9 @@ public class LmpsTxnDetail {
     @Column(name = "REMARK")
     private String remark;
 
+    @Column(name = "CLIENT_REF")
+    private String clientRef;
+
     @Column(name = "CORE_BANKING_REF")
     private String coreBankingRef;
 

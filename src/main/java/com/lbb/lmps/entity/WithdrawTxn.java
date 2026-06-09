@@ -78,6 +78,9 @@ public class WithdrawTxn {
     // @Column(name = "TO_MEMBER")
     // private String toMember;
 
+    @Column(name = "PROV_REF_NO")
+    private String provRefNo;
+
     @Column(name = "CORE_BANKING_REF")
     private String coreBankingRef;
 

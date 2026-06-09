@@ -66,7 +66,6 @@ Records every withdraw (transfer-out) transaction initiated by a customer, inclu
 | PK_WITHDRAW_TXN | PRIMARY KEY | `ID` |
 | UK_WITHDRAW_TXN_ID | UNIQUE | `TRANSACTION_ID` |
 | UK_WITHDRAW_TXN_NONCE | UNIQUE | `NONCE` |
-| UK_WITHDRAW_TXN_PROV_REF | UNIQUE | `PROV_REF_NO` |
 | UK_WITHDRAW_TXN_CORE_REF | UNIQUE | `CORE_BANKING_REF` |
 | CHK_WITHDRAW_TXN_STATUS | CHECK | `STATUS IN ('DEBIT_PENDING','DEBITED','CREDIT_PENDING','CREDITED','COMPLETED','REVERSAL_PENDING','REVERSAL','REVERSAL_FAILED','FAILED','CANCELLED')` |
 
@@ -77,7 +76,6 @@ Records every withdraw (transfer-out) transaction initiated by a customer, inclu
 | PK_WITHDRAW_TXN | UNIQUE | `ID` | Primary key lookup |
 | UK_WITHDRAW_TXN_ID | UNIQUE | `TRANSACTION_ID` | Dedup / idempotency check |
 | UK_WITHDRAW_TXN_NONCE | UNIQUE | `NONCE` | Client idempotency key enforcement |
-| UK_WITHDRAW_TXN_PROV_REF | UNIQUE | `PROV_REF_NO` | Provider reference dedup |
 | UK_WITHDRAW_TXN_CORE_REF | UNIQUE | `CORE_BANKING_REF` | CBS reference dedup |
 | IDX_WITHDRAW_TXN_CUSTOMER | NONUNIQUE | `CUSTOMER_ID` | History queries by customer |
 | IDX_WITHDRAW_TXN_DR_ACCT | NONUNIQUE | `DR_ACCOUNT_NO` | Lookup by debit account |
