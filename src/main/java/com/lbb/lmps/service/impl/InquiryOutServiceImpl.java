@@ -253,7 +253,7 @@ public class InquiryOutServiceImpl implements InquiryOutService {
         lmpsTxn.setFeeProviderCurrencyCode(txn.getFeeProviderCurrencyCode());
         lmpsTxn.setRemark(txn.getRemark());
         lmpsTxn.setCreatedAt(txn.getCreatedAt());
-        lmpsTxn.setProvRefNo(txn.getProvRefNo());
+        lmpsTxn.setClientRef(txn.getProvRefNo());
         if (data.getFeelist() != null) {
             lmpsTxn.setFeeList(mapper.writeValueAsString(data.getFeelist()));
         }
