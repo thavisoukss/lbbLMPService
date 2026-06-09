@@ -27,7 +27,7 @@ external:
       connect-timeout: 5000
       read-timeout: 10000
     core-banking:
-      url: https://uatapiv2.laobullionbank.com:8899
+      url: http://172.16.4.113:8082
     m-smart:
       url: http://172.16.4.18:7001
     notification:

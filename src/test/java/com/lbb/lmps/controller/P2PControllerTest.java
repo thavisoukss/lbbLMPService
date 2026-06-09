@@ -74,7 +74,7 @@ class P2PControllerTest {
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.status").value("error"))
                 .andExpect(jsonPath("$.error.code").value("ER_FIRST_ANSWER_INVALID"))
-                .andExpect(jsonPath("$.message").value("Security answer is incorrect"));
+                .andExpect(jsonPath("$.message").value("Invalid first security question answer"));
     }
 
     // --- helpers ---

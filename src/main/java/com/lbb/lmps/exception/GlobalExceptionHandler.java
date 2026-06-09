@@ -35,42 +35,59 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(ResourceNotFoundException.class)
     public ResponseEntity<?> handleResourceNotFound(ResourceNotFoundException e) {
-        log.warn("Exception handled: status=404 code={} message={}", e.getCode(), e.getMessage());
+        String msg = getMessage(e.getCode(), e.getMessage());
+        log.warn("Exception handled: status=404 code={} message={}", e.getCode(), msg);
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(
                 Map.of("status", "error",
                        "error", Map.of("code", e.getCode()),
-                       "message", e.getMessage())
+                       "message", msg)
         );
     }
 
     @ExceptionHandler(MSmartException.class)
     public ResponseEntity<?> handleMSmart(MSmartException e) {
-        log.warn("Exception handled: status=200 code={} message={}", e.getCode(), e.getMessage());
+        String msg = getMessage(e.getCode(), e.getMessage());
+        log.warn("Exception handled: status=200 code={} message={}", e.getCode(), msg);
         return ResponseEntity.ok(
                 Map.of("status", "error",
                        "error", Map.of("code", e.getCode()),
-                       "message", e.getMessage())
+                       "message", msg)
         );
     }
 
     @ExceptionHandler(SecurityQuestionException.class)
     public ResponseEntity<?> handleSecurityQuestion(SecurityQuestionException e) {
-        log.warn("Exception handled: status=400 code={} message={}", e.getCode(), e.getMessage());
+        String msg = getMessage(e.getCode(), e.getMessage());
+        log.warn("Exception handled: status=400 code={} message={}", e.getCode(), msg);
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
                 Map.of("status", "error",
                        "error", Map.of("code", e.getCode()),
-                       "message", e.getMessage())
+                       "message", msg)
         );
     }
 
     @ExceptionHandler(BusinessException.class)
     public ResponseEntity<?> handleBusiness(BusinessException e) {
-        log.warn("Exception handled: status=200 code={} message={}", e.getCode(), e.getMessage());
+        String msg = getMessage(e.getCode(), e.getMessage());
+        log.warn("Exception handled: status=200 code={} message={}", e.getCode(), msg);
         return ResponseEntity.ok(
                 Map.of("status", "error",
                        "error", Map.of("code", e.getCode()),
-                       "message", e.getMessage())
+                       "message", msg)
         );
+    }
+
+    private String getMessage(String code, String defaultMessage) {
+        if (code == null || code.isBlank()) {
+            return defaultMessage;
+        }
+        if ("RESOURCE_NOT_FOUND".equals(code)) {
+            if (defaultMessage == null || defaultMessage.isBlank() || defaultMessage.toLowerCase().contains("resource not found")) {
+                return messageSource.getMessage("error.RESOURCE_NOT_FOUND.message", null, "Resource not found", LocaleContextHolder.getLocale());
+            }
+            return defaultMessage;
+        }
+        return messageSource.getMessage("error." + code + ".message", null, defaultMessage, LocaleContextHolder.getLocale());
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)

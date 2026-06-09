@@ -17,8 +17,8 @@ echo "Token: $TOKEN"
 echo ""
 
 # ─── Step 2: P2P Inquiry ─────────────────────────────────────────────────────
-echo "==> POST /api/p2p/inquiry"
-INQUIRY_RESPONSE=$(curl -s -X POST http://localhost:8084/api/p2p/inquiry \
+echo "==> POST /payment/p2p/inquiry"
+INQUIRY_RESPONSE=$(curl -s -X POST http://localhost:8084/payment/p2p/inquiry \
   -H 'Content-Type: application/json' \
   -H "Authorization: Bearer $TOKEN" \
   -d '{
@@ -39,9 +39,9 @@ echo "q1=$Q1 q2=$Q2 q3=$Q3"
 echo ""
 
 # ─── Step 3: Transfer Quotation Verify ───────────────────────────────────────
-echo "==> POST /api/p2p/transfer-quotation-verify"
+echo "==> POST /payment/p2p/transfer-quotation-verify"
 # Replace answer values with the real security answers for phone 2097778968
-curl -s -X POST http://localhost:8084/api/p2p/transfer-quotation-verify \
+curl -s -X POST http://localhost:8084/payment/p2p/transfer-quotation-verify \
   -H 'Content-Type: application/json' \
   -H "Authorization: Bearer $TOKEN" \
   -d "{
