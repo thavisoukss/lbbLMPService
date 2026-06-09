@@ -35,10 +35,10 @@ external:
       api-key: A3STRPQFKB2C4JX589
 
 minio:
-  endpoint: https://s3-uat.laobullionbank.com
+  endpoint: https://s3-local.laobullionbank.com
   access-key: admin_iquri
   secret-key: admin@iquri@2025
-  bucket: lbb-mb-uat
+  bucket: lbb-mb-prod
 
 management:
   tracing:
