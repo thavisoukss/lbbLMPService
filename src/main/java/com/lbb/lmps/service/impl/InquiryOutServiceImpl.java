@@ -91,8 +91,8 @@ public class InquiryOutServiceImpl implements InquiryOutService {
 
         InquiryOutData inquiryData = smartResponse.getData();
         if (inquiryData != null) {
-            if (inquiryData.getTomember() == null || inquiryData.getTomember().isBlank()) {
-                inquiryData.setTomember(request.getToMember());
+            if (inquiryData.getTomembername() == null || inquiryData.getTomembername().isBlank()) {
+                inquiryData.setTomembername(request.getToMember());
             }
             if (inquiryData.getTomemberimage() != null && !inquiryData.getTomemberimage().isBlank()) {
                 inquiryData.setTomemberimage(minioStorageService.getFileURL("icon_image", inquiryData.getTomemberimage()));
@@ -175,8 +175,8 @@ public class InquiryOutServiceImpl implements InquiryOutService {
         inquiryData.setPurposeOfTxn(qrInfo.getPurposeOfTxn());
         inquiryData.setCity(qrInfo.getCity());
 
-        if (inquiryData.getTomember() == null || inquiryData.getTomember().isBlank()) {
-            inquiryData.setTomember(qrInfo.getMemberId());
+        if (inquiryData.getTomembername() == null || inquiryData.getTomembername().isBlank()) {
+            inquiryData.setTomembername(qrInfo.getMemberName());
         }
 
         if (inquiryData.getTomemberimage() != null && !inquiryData.getTomemberimage().isBlank()) {
