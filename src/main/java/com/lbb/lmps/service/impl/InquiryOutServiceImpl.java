@@ -90,8 +90,13 @@ public class InquiryOutServiceImpl implements InquiryOutService {
         }
 
         InquiryOutData inquiryData = smartResponse.getData();
-        if (inquiryData != null && inquiryData.getTomemberimage() != null && !inquiryData.getTomemberimage().isBlank()) {
-            inquiryData.setTomemberimage(minioStorageService.getFileURL("icon_image", inquiryData.getTomemberimage()));
+        if (inquiryData != null) {
+            if (inquiryData.getTomember() == null || inquiryData.getTomember().isBlank()) {
+                inquiryData.setTomember(request.getToMember());
+            }
+            if (inquiryData.getTomemberimage() != null && !inquiryData.getTomemberimage().isBlank()) {
+                inquiryData.setTomemberimage(minioStorageService.getFileURL("icon_image", inquiryData.getTomemberimage()));
+            }
         }
 
         String xNonce = UUID.randomUUID().toString();
@@ -169,6 +174,10 @@ public class InquiryOutServiceImpl implements InquiryOutService {
         inquiryData.setTxnCurrency(qrInfo.getTxnCurrency());
         inquiryData.setPurposeOfTxn(qrInfo.getPurposeOfTxn());
         inquiryData.setCity(qrInfo.getCity());
+
+        if (inquiryData.getTomember() == null || inquiryData.getTomember().isBlank()) {
+            inquiryData.setTomember(qrInfo.getMemberId());
+        }
 
         if (inquiryData.getTomemberimage() != null && !inquiryData.getTomemberimage().isBlank()) {
             inquiryData.setTomemberimage(minioStorageService.getFileURL("icon_image", inquiryData.getTomemberimage()));
