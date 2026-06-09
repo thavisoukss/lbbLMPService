@@ -1,9 +1,8 @@
 package com.lbb.lmps.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.lbb.lmps.dto.TransferOutQrBioRequest;
-import com.lbb.lmps.dto.TransferOutAccountBioRequest;
-import com.lbb.lmps.entity.Customer;
+import com.lbb.lmps.dto.*;
+import com.lbb.lmps.entity.*;
 import com.lbb.lmps.exception.ResourceNotFoundException;
 import com.lbb.lmps.remote.ApiMSmart;
 import com.lbb.lmps.remote.ApiNotification;
@@ -25,6 +24,8 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 
+import java.math.BigDecimal;
+import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -106,5 +107,92 @@ class TransferOutServiceImplTest {
         assertThatThrownBy(() -> service.transferOutAccountBio(request, "device-123"))
                 .isInstanceOf(RuntimeException.class)
                 .hasMessageContaining("Biometric key not registered");
+    }
+
+    @Test
+    void transferOutAccount_success() throws Exception {
+        TransferOutAccountRequest request = new TransferOutAccountRequest();
+        request.setXNonce("x-nonce-123");
+        request.setAmount(BigDecimal.TEN);
+        request.setFirstQuestionId("Q1");
+        request.setFirstAnswer("A1");
+        request.setSecondQuestionId("Q2");
+        request.setSecondAnswer("A2");
+        request.setThirdQuestionId("Q3");
+        request.setThirdAnswer("A3");
+        request.setToAccount("CR-ACCT");
+        request.setPurpose("test purpose");
+
+        when(claims.getSubject()).thenReturn("user-123");
+        when(claims.get("user-phone")).thenReturn("02012345678");
+
+        org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder encoder = new org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder(12);
+        String hash1 = encoder.encode("A1");
+        String hash2 = encoder.encode("A2");
+        String hash3 = encoder.encode("A3");
+
+        SecurityQuestionRepository.CustomerAnswerProjection ans1 = mock(SecurityQuestionRepository.CustomerAnswerProjection.class);
+        when(ans1.getQuestionId()).thenReturn("Q1");
+        when(ans1.getAnswer()).thenReturn(hash1);
+
+        SecurityQuestionRepository.CustomerAnswerProjection ans2 = mock(SecurityQuestionRepository.CustomerAnswerProjection.class);
+        when(ans2.getQuestionId()).thenReturn("Q2");
+        when(ans2.getAnswer()).thenReturn(hash2);
+
+        SecurityQuestionRepository.CustomerAnswerProjection ans3 = mock(SecurityQuestionRepository.CustomerAnswerProjection.class);
+        when(ans3.getQuestionId()).thenReturn("Q3");
+        when(ans3.getAnswer()).thenReturn(hash3);
+
+        when(securityQuestionRepository.findAnswersByCustomerId(CUSTOMER_ID)).thenReturn(List.of(ans1, ans2, ans3));
+
+        WithdrawTxn withdrawTxn = new WithdrawTxn();
+        withdrawTxn.setId(10L);
+        withdrawTxn.setTransactionId("TXN-123");
+        withdrawTxn.setCustomerId(CUSTOMER_ID);
+        withdrawTxn.setStatus("DEBIT_PENDING");
+        withdrawTxn.setRemark("MEMBER-CODE");
+        withdrawTxn.setCurrencyCode("LAK");
+        withdrawTxn.setDrAccountNo("DR-ACCT");
+        withdrawTxn.setDrAccountName("John");
+        withdrawTxn.setDrCif(CUSTOMER_ID);
+        withdrawTxn.setCrAccountNo("CR-ACCT");
+        withdrawTxn.setCrAccountName("Jane");
+
+        when(withdrawTxnRepository.findByNonce("x-nonce-123")).thenReturn(Optional.of(withdrawTxn));
+
+        LmpsTxnDetail lmpsTxnDetail = new LmpsTxnDetail();
+        lmpsTxnDetail.setId(20L);
+        lmpsTxnDetail.setTransactionId("TXN-123");
+
+        when(lmpsTxnDetailRepository.findByTransactionId("TXN-123")).thenReturn(Optional.of(lmpsTxnDetail));
+
+        SmartTransferOutResponse mockResponse = new SmartTransferOutResponse();
+        mockResponse.setResponseCode("0000");
+        SmartTransferOutData data = new SmartTransferOutData();
+        data.setTxnId("TXN-123");
+        data.setCbsRefNo("CBS-REF-999");
+        data.setTxnAmount(BigDecimal.TEN);
+        data.setTxnFee(BigDecimal.ZERO);
+        data.setTxnCcy("LAK");
+        data.setFromAcctId("DR-ACCT");
+        data.setFromCustName("John");
+        data.setToAcctId("CR-ACCT");
+        data.setToCustName("Jane");
+        data.setPurpose("test purpose");
+        mockResponse.setData(data);
+
+        when(apiMSmart.callTransferOut(org.mockito.ArgumentMatchers.any())).thenReturn("some-raw-json");
+        when(mapper.readValue(org.mockito.ArgumentMatchers.anyString(), org.mockito.ArgumentMatchers.eq(SmartTransferOutResponse.class)))
+                .thenReturn(mockResponse);
+
+        TransferOutQrResponse response = service.transferOutAccount(request, "device-123");
+
+        org.assertj.core.api.Assertions.assertThat(response.getTransactionId()).isEqualTo("CBS-REF-999");
+        org.assertj.core.api.Assertions.assertThat(response.getSlipCode()).isEqualTo("CBS-REF-999");
+        org.assertj.core.api.Assertions.assertThat(response.getProviderRef()).isEqualTo("CBS-REF-999");
+        org.assertj.core.api.Assertions.assertThat(withdrawTxn.getStatus()).isEqualTo("COMPLETED");
+        org.assertj.core.api.Assertions.assertThat(withdrawTxn.getCoreBankingRef()).isEqualTo("CBS-REF-999");
+        org.assertj.core.api.Assertions.assertThat(lmpsTxnDetail.getStatus()).isEqualTo("COMPLETED");
+        org.assertj.core.api.Assertions.assertThat(lmpsTxnDetail.getCoreBankingRef()).isEqualTo("CBS-REF-999");
     }
 }

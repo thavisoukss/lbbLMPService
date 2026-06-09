@@ -213,8 +213,8 @@ public class TransferOutServiceImpl implements TransferOutService {
 
         // Step 7: build response
         TransferOutQrResponse response = new TransferOutQrResponse();
-        response.setTransactionId(result.getTxnId());
-        response.setSlipCode(result.getTxnId());
+        response.setTransactionId(result.getCbsRefNo());
+        response.setSlipCode(result.getCbsRefNo());
         response.setTranDate(LocalDateTime.now().format(TRAN_DATE_FMT));
         response.setTotalAmount(result.getTxnAmount());
         response.setCurrencyCode(result.getTxnCcy());
@@ -363,8 +363,8 @@ public class TransferOutServiceImpl implements TransferOutService {
         }
 
         TransferOutQrResponse response = new TransferOutQrResponse();
-        response.setTransactionId(result.getTxnId());
-        response.setSlipCode(result.getTxnId());
+        response.setTransactionId(result.getCbsRefNo());
+        response.setSlipCode(result.getCbsRefNo());
         response.setTranDate(LocalDateTime.now().format(TRAN_DATE_FMT));
         response.setTotalAmount(result.getTxnAmount());
         response.setCurrencyCode(result.getTxnCcy());
@@ -534,8 +534,8 @@ public class TransferOutServiceImpl implements TransferOutService {
         }
 
         TransferOutQrResponse response = new TransferOutQrResponse();
-        response.setTransactionId(result.getTxnId());
-        response.setSlipCode(result.getTxnId());
+        response.setTransactionId(result.getCbsRefNo());
+        response.setSlipCode(result.getCbsRefNo());
         response.setTranDate(LocalDateTime.now().format(TRAN_DATE_FMT));
         response.setTotalAmount(result.getTxnAmount());
         response.setCurrencyCode(result.getTxnCcy());
@@ -692,8 +692,8 @@ public class TransferOutServiceImpl implements TransferOutService {
         }
 
         TransferOutQrResponse response = new TransferOutQrResponse();
-        response.setTransactionId(result.getTxnId());
-        response.setSlipCode(result.getTxnId());
+        response.setTransactionId(result.getCbsRefNo());
+        response.setSlipCode(result.getCbsRefNo());
         response.setTranDate(LocalDateTime.now().format(TRAN_DATE_FMT));
         response.setTotalAmount(result.getTxnAmount());
         response.setCurrencyCode(result.getTxnCcy());
