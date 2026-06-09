@@ -260,6 +260,7 @@ Generates a static QR code string for a given customer account.
     "toType": "ACCOUNT",
     "toaccount": "0100000947725",
     "tomember": "IB",
+    "tomemberImage": "https://example.com/ib.jpg",
     "reference": "LBB7TWU9VZSGASW4HKG7466",
     "accountname": "MR AXXXXXXXXX XXXXXXXXXX",
     "accountccy": "LAK",
