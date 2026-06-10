@@ -228,6 +228,7 @@ public class InquiryOutServiceImpl implements InquiryOutService {
         // For QR transfers: REMARK stores "QR" as a type marker.
         txn.setRemark("ACCOUNT".equals(toType) ? data.getTomember() : toType);
         txn.setCreatedAt(LocalDateTime.now());
+        txn.setProvRefNo(data.getReference());
 
         withdrawTxnRepository.save(txn);
         log.info("[saveInquiryRecord] saved WITHDRAW_TXN txnId={} toType={}", data.getTxnId(), toType);
@@ -252,6 +253,7 @@ public class InquiryOutServiceImpl implements InquiryOutService {
         lmpsTxn.setFeeProviderCurrencyCode(txn.getFeeProviderCurrencyCode());
         lmpsTxn.setRemark(txn.getRemark());
         lmpsTxn.setCreatedAt(txn.getCreatedAt());
+        lmpsTxn.setClientRef(txn.getProvRefNo());
         if (data.getFeelist() != null) {
             lmpsTxn.setFeeList(mapper.writeValueAsString(data.getFeelist()));
         }
