@@ -223,10 +223,10 @@ public class TransferOutServiceImpl implements TransferOutService {
         response.setDrAccountName(result.getFromCustName());
         response.setCrAccountNo(result.getToAcctId());
         response.setCrAccountName(result.getToCustName());
-        response.setProviderRef(result.getCbsRefNo());
+        response.setProviderRef(withdrawTxn.getProvRefNo());
         response.setPurpose(result.getPurpose());
 
-        log.info("[transferOutQr] completed txnId={} totalAmount={} feeAmt={} cbsRefNo={} duration_ms={}", result.getTxnId(), response.getTotalAmount(), response.getFeeAmt(), response.getProviderRef(), System.currentTimeMillis() - start);
+        log.info("[transferOutQr] completed txnId={} totalAmount={} feeAmt={} cbsRefNo={} duration_ms={}", result.getTxnId(), response.getTotalAmount(), response.getFeeAmt(), result.getCbsRefNo(), System.currentTimeMillis() - start);
         return response;
     }
 
@@ -373,10 +373,10 @@ public class TransferOutServiceImpl implements TransferOutService {
         response.setDrAccountName(result.getFromCustName());
         response.setCrAccountNo(result.getToAcctId());
         response.setCrAccountName(result.getToCustName());
-        response.setProviderRef(result.getCbsRefNo());
+        response.setProviderRef(withdrawTxn.getProvRefNo());
         response.setPurpose(result.getPurpose());
 
-        log.info("[transferOutAccount] completed txnId={} totalAmount={} feeAmt={} cbsRefNo={} duration_ms={}", result.getTxnId(), response.getTotalAmount(), response.getFeeAmt(), response.getProviderRef(), System.currentTimeMillis() - start);
+        log.info("[transferOutAccount] completed txnId={} totalAmount={} feeAmt={} cbsRefNo={} duration_ms={}", result.getTxnId(), response.getTotalAmount(), response.getFeeAmt(), result.getCbsRefNo(), System.currentTimeMillis() - start);
         return response;
     }
 
@@ -544,10 +544,10 @@ public class TransferOutServiceImpl implements TransferOutService {
         response.setDrAccountName(result.getFromCustName());
         response.setCrAccountNo(result.getToAcctId());
         response.setCrAccountName(result.getToCustName());
-        response.setProviderRef(result.getCbsRefNo());
+        response.setProviderRef(withdrawTxn.getProvRefNo());
         response.setPurpose(result.getPurpose());
 
-        log.info("[transferOutQrBio] completed txnId={} totalAmount={} feeAmt={} cbsRefNo={} duration_ms={}", result.getTxnId(), response.getTotalAmount(), response.getFeeAmt(), response.getProviderRef(), System.currentTimeMillis() - start);
+        log.info("[transferOutQrBio] completed txnId={} totalAmount={} feeAmt={} cbsRefNo={} duration_ms={}", result.getTxnId(), response.getTotalAmount(), response.getFeeAmt(), result.getCbsRefNo(), System.currentTimeMillis() - start);
         return response;
     }
 
@@ -702,10 +702,10 @@ public class TransferOutServiceImpl implements TransferOutService {
         response.setDrAccountName(result.getFromCustName());
         response.setCrAccountNo(result.getToAcctId());
         response.setCrAccountName(result.getToCustName());
-        response.setProviderRef(result.getCbsRefNo());
+        response.setProviderRef(withdrawTxn.getProvRefNo());
         response.setPurpose(result.getPurpose());
 
-        log.info("[transferOutAccountBio] completed txnId={} totalAmount={} feeAmt={} cbsRefNo={} duration_ms={}", result.getTxnId(), response.getTotalAmount(), response.getFeeAmt(), response.getProviderRef(), System.currentTimeMillis() - start);
+        log.info("[transferOutAccountBio] completed txnId={} totalAmount={} feeAmt={} cbsRefNo={} duration_ms={}", result.getTxnId(), response.getTotalAmount(), response.getFeeAmt(), result.getCbsRefNo(), System.currentTimeMillis() - start);
         return response;
     }
 
