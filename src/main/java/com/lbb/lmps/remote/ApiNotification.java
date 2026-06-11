@@ -40,7 +40,8 @@ public class ApiNotification {
     public void send(String title, String desc, String phone) throws Exception {
         String nonce = UUID.randomUUID().toString();
         String body = mapper.writeValueAsString(new NotificationRequest(title, desc, phone));
-        log.info("[ApiNotification] sending title={} phone={} nonce={}", title, phone, nonce);
+        log.info("[ApiNotification] sending nonce={}", nonce);
+        log.info("[ApiNotification] sending body={}",body);
 
         restClient
                 .post()
